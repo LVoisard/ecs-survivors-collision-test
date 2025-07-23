@@ -44,6 +44,7 @@ namespace physics {
     inline static std::vector<flecs::entity> collision_list_systems;
     inline static std::vector<flecs::entity> spatial_hashing_systems;
     inline static std::vector<flecs::entity> spatial_hashing_relationship_systems;
+        inline static flecs::entity m_physicsTick;
 
     class PhysicsModule : public BaseModule<PhysicsModule> {
         friend class BaseModule<PhysicsModule>;
@@ -54,6 +55,7 @@ namespace physics {
         };
 
         static void set_collision_strategy(PHYSICS_COLLISION_STRATEGY strategy);
+        static void reset_systems_list();
 
         static Vector2 collide_circles(const CircleCollider &a, const core::Position2D &a_pos, CollisionInfo& a_info,
                                        const CircleCollider &b, const core::Position2D &b_pos, CollisionInfo& b_info) {
@@ -133,7 +135,6 @@ namespace physics {
             return overlap;
         }
 
-        flecs::entity m_physicsTick;
 
 
     private:

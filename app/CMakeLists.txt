@@ -11,4 +11,5 @@ add_dependencies(${PROJECT_NAME} copy_resources)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         ${LIBRARY_NAME}
         raylib
-        flecs::flecs_static)
+        flecs::flecs_static
+        perf-cpp)

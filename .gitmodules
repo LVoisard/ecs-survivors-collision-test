@@ -1,3 +1,6 @@
 [submodule "external/tmxlite"]
 	path = external/tmxlite
 	url = https://github.com/fallahn/tmxlite
+[submodule "perf-cpp"]
+	path = external/perf-cpp
+	url = https://github.com/jmuehlig/perf-cpp

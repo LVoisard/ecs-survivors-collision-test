@@ -6,6 +6,7 @@
 #include <iostream>
 #include <ostream>
 
+#include <linux/perf_event.h>
 #if defined(EMSCRIPTEN)
 #include <emscripten/emscripten.h>
 #endif
@@ -53,7 +54,6 @@ void Game::init() {
     // web has an scaling issue with the cursor
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     //#endif
-
 
     InitWindow(m_windowWidth, m_windowHeight, m_windowName.c_str());
 
@@ -110,7 +110,7 @@ void Game::init() {
                 3.f,
                 WHITE
             })
-            .set<gameplay::Experience>({1, 0, 10});
+            .set<gameplay::Experience>({1, 0, 100000});
 
     m_world.entity("dagger attack").child_of(player)
             .add<gameplay::Projectile>()

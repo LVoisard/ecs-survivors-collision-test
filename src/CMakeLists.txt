@@ -13,10 +13,12 @@ add_library(${LIBRARY_NAME} STATIC
 add_subdirectory("modules")
 
 target_include_directories(${LIBRARY_NAME} PUBLIC
-        ${LIBRARY_INCLUDES})
+        ${LIBRARY_INCLUDES}
+        ${perf-cpp-external_SOURCE_DIR}/include/)
 
 target_link_libraries(${LIBRARY_NAME} PUBLIC
         raylib
         flecs::flecs_static
-        tmxlite)
+        tmxlite
+        perf-cpp)
 

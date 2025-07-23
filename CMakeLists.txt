@@ -57,6 +57,14 @@ if (NOT flecs_FOUND) # If there's none, fetch and build flecs
     endif ()
 endif ()
 
+include(FetchContent)
+FetchContent_Declare(
+        perf-cpp-external
+        GIT_REPOSITORY "https://github.com/jmuehlig/perf-cpp"
+        GIT_TAG "v0.12.2"
+)
+FetchContent_MakeAvailable(perf-cpp-external)
+
 # Our Project
 
 add_subdirectory("src")
@@ -65,11 +73,11 @@ add_subdirectory("external/tmxlite/tmxlite")
 add_subdirectory("include")
 add_subdirectory("app")
 
-
-target_link_libraries(${LIBRARY_NAME} PRIVATE
+target_link_libraries(${LIBRARY_NAME} PUBLIC
         raylib
         flecs::flecs_static
         tmxlite
+        perf-cpp
 )
 
 

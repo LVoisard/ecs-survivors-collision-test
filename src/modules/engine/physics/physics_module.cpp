@@ -60,6 +60,14 @@ namespace physics {
             strategy == SPATIAL_HASH_RELATIONSHIP ? e.enable() : e.disable();
         }
     }
+    void PhysicsModule::reset_systems_list() {
+        physics::relationship_systems.clear();
+        physics::relationship_dontfragment_systems.clear();
+        physics::collision_entities_systems.clear();
+        physics::collision_list_systems.clear();
+        physics::spatial_hashing_systems.clear();
+        physics::spatial_hashing_relationship_systems.clear();
+    }
 
 
     void PhysicsModule::register_components(flecs::world &world) {
@@ -155,28 +163,27 @@ namespace physics {
         m_collision_detection_naive_system.disable();
         collision_list_systems.push_back(m_collision_detection_naive_system);
 
-        relationship_systems.push_back(world.system<const core::Position2D, const Collider>(
-                                                          "Detect Collisions ECS (Relationship)")
-                                                     .with<rendering::Visible>()
-                                                     .kind<Detection>()
-                                                     .multi_threaded()
-                                                     .tick_source(m_physicsTick)
-                                                     .each(systems::collision_detection_non_static_relationship_system));
+        relationship_systems.push_back(
+                world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship)")
+                        .with<rendering::Visible>()
+                        .kind<Detection>()
+                        .multi_threaded()
+                        .tick_source(m_physicsTick)
+                        .each(systems::collision_detection_non_static_relationship_system));
 
-        relationship_dontfragment_systems.push_back(world.system<const core::Position2D, const Collider>(
-                                                         "Detect Collisions ECS (Relationship non-frag)")
-                                                    .with<rendering::Visible>()
-                                                    .kind<Detection>()
-                                                    .multi_threaded()
-                                                    .tick_source(m_physicsTick)
-                                                    .each(systems::collision_detection_non_static_relationship_system));
+        relationship_dontfragment_systems.push_back(
+                world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship non-frag)")
+                        .with<rendering::Visible>()
+                        .kind<Detection>()
+                        .tick_source(m_physicsTick)
+                        .each(systems::collision_detection_non_static_relationship_non_fragmenting_system));
 
-        world.system<const core::Position2D, const Collider>(
-                                                         "Detect Collisions ECS (entity)")
-                                                    .with<rendering::Visible>()
-                                                    .kind<Detection>()
-                                                    .tick_source(m_physicsTick)
-                                                    .each(systems::collision_detection_non_static_relationship_system);
+        world.system<const core::Position2D, const Collider>("Detect Collisions ECS (entity)")
+                .with<rendering::Visible>()
+                .kind<Detection>()
+                .tick_source(m_physicsTick)
+                .each(systems::collision_detection_non_static_relationship_system)
+                .disable();
 
 
         // need a second pass to collide static colliders. Even when static objects are out of the screen we compute the
@@ -234,23 +241,39 @@ namespace physics {
                         .each(systems::collision_resolution_system));
 
         collision_list_systems.push_back(world.system<CollisionRecordList>("Add CollidedWith Component 1")
-                .term_at(0)
-                .singleton()
-                .kind<Resolution>()
-                .tick_source(m_physicsTick)
-                .each(systems::add_collided_with_system));
+                                                 .term_at(0)
+                                                 .singleton()
+                                                 .kind<Resolution>()
+                                                 .tick_source(m_physicsTick)
+                                                 .each(systems::add_collided_with_system));
         spatial_hashing_systems.push_back(world.system<CollisionRecordList>("Add CollidedWith Component 2")
-                .term_at(0)
-                .singleton()
-                .kind<Resolution>()
-                .tick_source(m_physicsTick)
-                .each(systems::add_collided_with_system));
+                                                  .term_at(0)
+                                                  .singleton()
+                                                  .kind<Resolution>()
+                                                  .tick_source(m_physicsTick)
+                                                  .each(systems::add_collided_with_system));
 
         world.system("Collision Cleanup")
                 .with<Collider>()
                 .kind<CollisionCleanup>()
+                .immediate()
                 .tick_source(m_physicsTick)
                 .each(systems::collision_cleanup_system);
+
+        world.system("Collision Cleanup 3")
+                .with<NonFragmentingCollidedWith>(flecs::Wildcard)
+                .with<Collider>()
+                .kind<CollisionCleanup>()
+                .immediate()
+                .tick_source(m_physicsTick)
+                .each(systems::collision_cleanup_non_frag_system);
+
+        world.system("Collision Cleanup 2")
+                .with<Collider>()
+                .kind<CollisionCleanup>()
+                .tick_source(m_physicsTick)
+                .each(systems::collision_cleanup_system_2);
+
 
         // spatial_hashing_systems.push_back(world.system("Collision Cleanup 2")
         //         .with<Collider>()
@@ -259,18 +282,18 @@ namespace physics {
         //         .each(systems::collision_cleanup_system));
 
         collision_list_systems.push_back(world.system<CollisionRecordList>("Collision Cleanup List 1")
-                .term_at(0)
-                .singleton()
-                .kind<CollisionCleanup>()
-                .tick_source(m_physicsTick)
-                .each(systems::collision_cleanup_list_system));
+                                                 .term_at(0)
+                                                 .singleton()
+                                                 .kind<CollisionCleanup>()
+                                                 .tick_source(m_physicsTick)
+                                                 .each(systems::collision_cleanup_list_system));
 
         spatial_hashing_systems.push_back(world.system<CollisionRecordList>("Collision Cleanup List 2")
-                .term_at(0)
-                .singleton()
-                .kind<CollisionCleanup>()
-                .tick_source(m_physicsTick)
-                .each(systems::collision_cleanup_list_system));
+                                                  .term_at(0)
+                                                  .singleton()
+                                                  .kind<CollisionCleanup>()
+                                                  .tick_source(m_physicsTick)
+                                                  .each(systems::collision_cleanup_list_system));
     }
 
     void PhysicsModule::register_pipeline(flecs::world &world) {

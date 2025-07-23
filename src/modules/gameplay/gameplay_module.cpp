@@ -131,6 +131,12 @@ namespace gameplay {
                 .kind<OnCollisionDetected>()
                 .each(systems::deal_damage_on_collision_system);
 
+        world.system<Damage>("collision detected, deal damage to target (non-frag)")
+                .with<physics::NonFragmentingCollidedWith>(flecs::Wildcard)
+                .immediate()
+                .kind<OnCollisionDetected>()
+                .each(systems::deal_damage_on_collision_system);
+
         world.system<const Health>("create health bar")
                 .with<TakeDamage>()
                 .without<HealthBar>()

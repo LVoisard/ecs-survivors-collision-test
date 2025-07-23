@@ -16,7 +16,9 @@ namespace gameplay::systems {
                 player_exp->level++;
                 player_exp->value -= player_exp->threshold;
                 player_exp->threshold = player_exp->threshold * 1.2f;
-                exp.other.get_mut<Health>().value = exp.other.get<Health>().max;
+                if(auto hp = exp.other.try_get_mut<Health>()) {
+                    hp->value = hp->max;
+                }
                 exp.other.emit<LevelUpEvent>({player_exp->level, player_exp->threshold});
             }
             exp.other.emit<ExpGainedEvent>({player_exp->value});

@@ -43,6 +43,11 @@ Game::Game(const char *windowName, int windowWidth, int windowHeight) : m_world(
                                                                         m_windowName(windowName),
                                                                         m_windowHeight(windowHeight),
                                                                         m_windowWidth(windowWidth) {
+
+}
+
+void Game::init() {
+
     // Raylib window
     //#ifndef EMSCRIPTEN
     // web has an scaling issue with the cursor
@@ -53,11 +58,6 @@ Game::Game(const char *windowName, int windowWidth, int windowHeight) : m_world(
     InitWindow(m_windowWidth, m_windowHeight, m_windowName.c_str());
 
     SetExitKey(KEY_F4);
-    init();
-}
-
-void Game::init() {
-
 #ifndef EMSCRIPTEN
     // use the flecs explorer when not on browser
     m_world.import<flecs::stats>();
@@ -110,8 +110,6 @@ void Game::init() {
                 3.f,
                 WHITE
             })
-            .set<gameplay::Health>({150, 150})
-            .set<gameplay::RegenHealth>({1.0f})
             .set<gameplay::Experience>({1, 0, 10});
 
     m_world.entity("dagger attack").child_of(player)
@@ -188,11 +186,11 @@ void Game::init() {
     auto spawner = m_world.entity("enemy_spawner")
             .set<gameplay::Spawner>({enemy, 1});
 
-    m_world.entity("tilemap_1")
-            .set<tilemap::Tilemap>({
-                "../resources/tiled/maps/sampleMap.tmx",
-                3.0f
-            });
+    // m_world.entity("tilemap_1")
+    //         .set<tilemap::Tilemap>({
+    //             "../resources/tiled/maps/sampleMap.tmx",
+    //             3.0f
+    //         });
 
     m_world.set<rendering::TrackingCamera>({
         player,
@@ -390,6 +388,10 @@ void Game::run() {
     //--------------------------------------------------------------------------------------
     CloseWindow(); // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
+}
+void Game::set_collision_strategy(physics::PHYSICS_COLLISION_STRATEGY strategy) {
+    physics::PhysicsModule::set_collision_strategy(strategy);
+
 }
 
 void Game::UpdateDrawFrameDesktop() {

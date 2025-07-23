@@ -12,6 +12,7 @@
 namespace physics::systems {
     inline void collision_cleanup_system(flecs::iter &it, size_t i) {
         it.world().remove_all<CollidedWith>(it.entity(i));
+        it.world().remove_all<NonFragmentingCollidedWith>(it.entity(i));
     }
 
     inline void collision_cleanup_list_system(CollisionRecordList& list) {

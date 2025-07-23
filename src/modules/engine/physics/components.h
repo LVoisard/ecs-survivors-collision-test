@@ -56,6 +56,8 @@ namespace physics {
 
     struct CollidedWith {
     };
+    struct NonFragmentingCollidedWith {
+    };
 
     struct CollisionInfo {
         Vector2 normal;

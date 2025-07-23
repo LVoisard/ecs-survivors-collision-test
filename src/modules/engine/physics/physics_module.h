@@ -20,6 +20,15 @@
 
 
 namespace physics {
+    enum PHYSICS_COLLISION_STRATEGY {
+        COLLISION_RELATIONSHIP,
+        COLLISION_RELATIONSHIP_DONTFRAGMENT,
+        COLLISION_ENTITY,
+        RECORD_LIST,
+        SPATIAL_HASH,
+        SPATIAL_HASH_RELATIONSHIP,
+    };
+
     constexpr float PHYSICS_TICK_LENGTH = 0.016f;
     static CollisionFilter player_filter = static_cast<CollisionFilter>(enemy | environment);
     static CollisionFilter enemy_filter = static_cast<CollisionFilter>(player | enemy | environment);
@@ -29,6 +38,13 @@ namespace physics {
     inline flecs::system m_collision_detection_spatial_ecs;
     inline flecs::system m_collision_detection_naive_system;
 
+    inline static std::vector<flecs::entity> relationship_systems;
+    inline static std::vector<flecs::entity> relationship_dontfragment_systems;
+    inline static std::vector<flecs::entity> collision_entities_systems;
+    inline static std::vector<flecs::entity> collision_list_systems;
+    inline static std::vector<flecs::entity> spatial_hashing_systems;
+    inline static std::vector<flecs::entity> spatial_hashing_relationship_systems;
+
     class PhysicsModule : public BaseModule<PhysicsModule> {
         friend class BaseModule<PhysicsModule>;
 
@@ -36,6 +52,8 @@ namespace physics {
         // do not add implementation to the constructor
         PhysicsModule(flecs::world &world): BaseModule(world) {
         };
+
+        static void set_collision_strategy(PHYSICS_COLLISION_STRATEGY strategy);
 
         static Vector2 collide_circles(const CircleCollider &a, const core::Position2D &a_pos, CollisionInfo& a_info,
                                        const CircleCollider &b, const core::Position2D &b_pos, CollisionInfo& b_info) {
@@ -119,6 +137,8 @@ namespace physics {
 
 
     private:
+
+
         void register_components(flecs::world &world);
 
         void register_queries(flecs::world &world);

@@ -25,6 +25,9 @@
 #include "systems/enable_entity_on_open_system.h"
 
 namespace core {
+    CoreModule::~CoreModule() {
+        //queries::position_and_tag_query.destruct();
+    }
     void CoreModule::register_components(flecs::world &world) {
         world.component<Position2D>();
         world.component<Speed>();

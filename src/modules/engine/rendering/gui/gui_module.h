@@ -20,6 +20,13 @@ namespace rendering::gui {
         GUIModule(flecs::world &world): BaseModule(world) {
         };
 
+        ~GUIModule() {
+            gui_canvas.destruct();
+            button_prefab.destruct();
+            panel_prefab.destruct();
+            menu_bar.destruct();
+        }
+
 
         inline static flecs::entity gui_canvas;
         inline static flecs::entity button_prefab;

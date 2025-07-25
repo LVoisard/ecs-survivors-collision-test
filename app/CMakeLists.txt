@@ -8,8 +8,16 @@ add_custom_target(copy_resources ALL
 
 add_dependencies(${PROJECT_NAME} copy_resources)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC
-        ${LIBRARY_NAME}
+set(libs
         raylib
         flecs::flecs_static
-        perf-cpp)
+        tmxlite
+)
+
+if (UNIX)
+    list(APPEND libs perf-cpp)
+endif (UNIX)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        ${LIBRARY_NAME}
+        ${libs})

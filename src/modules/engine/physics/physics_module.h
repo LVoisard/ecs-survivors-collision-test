@@ -7,6 +7,7 @@
 
 
 #include <cmath>
+#include <functional>
 #include <vector>
 
 #include "modules/base_module.h"
@@ -27,6 +28,7 @@ namespace physics {
         RECORD_LIST,
         SPATIAL_HASH,
         SPATIAL_HASH_RELATIONSHIP,
+        COUNT
     };
 
     constexpr float PHYSICS_TICK_LENGTH = 0.016f;
@@ -38,12 +40,7 @@ namespace physics {
     inline flecs::system m_collision_detection_spatial_ecs;
     inline flecs::system m_collision_detection_naive_system;
 
-    inline static std::vector<flecs::entity> relationship_systems;
-    inline static std::vector<flecs::entity> relationship_dontfragment_systems;
-    inline static std::vector<flecs::entity> collision_entities_systems;
-    inline static std::vector<flecs::entity> collision_list_systems;
-    inline static std::vector<flecs::entity> spatial_hashing_systems;
-    inline static std::vector<flecs::entity> spatial_hashing_relationship_systems;
+    inline static std::vector<std::vector<flecs::entity>> collision_method_systems;
         inline static flecs::entity m_physicsTick;
 
     class PhysicsModule : public BaseModule<PhysicsModule> {
@@ -54,86 +51,12 @@ namespace physics {
         PhysicsModule(flecs::world &world): BaseModule(world) {
         };
 
+        ~PhysicsModule();
+
         static void set_collision_strategy(PHYSICS_COLLISION_STRATEGY strategy);
         static void reset_systems_list();
 
-        static Vector2 collide_circles(const CircleCollider &a, const core::Position2D &a_pos, CollisionInfo& a_info,
-                                       const CircleCollider &b, const core::Position2D &b_pos, CollisionInfo& b_info) {
-            float combinedRadius = a.radius + b.radius;
 
-            // Find the distance and adjust to resolve the overlap
-            Vector2 direction = b_pos.value - a_pos.value;
-            Vector2 moveDirection = Vector2Normalize(direction);
-            float overlap = combinedRadius - Vector2Length(direction);
-
-            a_info.normal = Vector2Negate(moveDirection);
-            b_info.normal = moveDirection;
-
-            return moveDirection * overlap;
-        }
-
-        static Vector2 collide_circle_rec(const CircleCollider &a, core::Position2D &a_pos, CollisionInfo& a_info,
-                                          const Collider &b, core::Position2D &b_pos, CollisionInfo& b_info) {
-            float recCenterX = b_pos.value.x + b.bounds.x + b.bounds.width / 2.0f;
-            float recCenterY = b_pos.value.y + b.bounds.y + b.bounds.height / 2.0f;
-
-            float halfWidth = b.bounds.width / 2.0f;
-            float halfHeight = b.bounds.height / 2.0f;
-
-            float dx = a_pos.value.x - recCenterX;
-            float dy = a_pos.value.y - recCenterY;
-
-            float absDx = fabsf(dx);
-            float absDy = fabsf(dy);
-
-            Vector2 overlap = {0, 0};
-
-            if (absDx > (halfWidth + a.radius)) return overlap;
-            if (absDy > (halfHeight + a.radius)) return overlap;
-
-            if (absDx <= halfWidth || absDy <= halfHeight) {
-                // Side collision — resolve with axis-aligned MTV
-                float overlapX = (halfWidth + a.radius) - absDx;
-                float overlapY = (halfHeight + a.radius) - absDy;
-
-
-                if (overlapX < overlapY) {
-                    overlap.x = dx < 0 ? overlapX : -overlapX;
-                } else {
-                    overlap.y = dy < 0 ? overlapY : -overlapY;
-                }
-                a_info.normal = Vector2Normalize(Vector2Negate(overlap));
-                b_info.normal = Vector2Normalize(overlap);
-                return overlap;
-            }
-
-            // Corner collision
-            float cornerDx = absDx - halfWidth;
-            float cornerDy = absDy - halfHeight;
-
-            float cornerDistSq = cornerDx * cornerDx + cornerDy * cornerDy;
-            float radius = a.radius;
-
-            if (cornerDistSq < radius * radius) {
-                float dist = sqrtf(cornerDistSq);
-
-                if (dist == 0.0f) dist = 0.01f; // Avoid divide by zero
-
-                float overlap_length = radius - dist;
-                float nx = cornerDx / dist;
-                float ny = cornerDy / dist;
-
-                overlap = {
-                    nx * overlap_length * ((dx < 0) ? 1.0f : -1.0f),
-                    ny * overlap_length * ((dy < 0) ? 1.0f : -1.0f)
-                };
-
-                a_info.normal = Vector2Normalize(Vector2Negate(overlap));
-                b_info.normal = Vector2Normalize(overlap);
-            }
-
-            return overlap;
-        }
 
 
 

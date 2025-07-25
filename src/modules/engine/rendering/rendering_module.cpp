@@ -10,9 +10,9 @@
 #include "gui/components.h"
 #include <raymath.h>
 
-#include "queries.h"
 #include "gui/gui_module.h"
 #include "modules/gameplay/components.h"
+#include "queries.h"
 #include "systems/begin_drawing_system.h"
 #include "systems/create_camera_system.h"
 #include "systems/determine_visible_entities_system.h"
@@ -22,6 +22,10 @@
 #include "systems/update_and_begin_camera_mode_system.h"
 
 
+rendering::RenderingModule::~RenderingModule() {
+    //queries::entity_count_query.destruct();
+    //queries::entity_visible_count_query.destruct();
+}
 void rendering::RenderingModule::register_components(flecs::world world) {
     world.component<Priority>();
 }

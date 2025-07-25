@@ -77,9 +77,9 @@ namespace physics {
     };
 
     struct IdPairHash {
-        std::size_t operator () (const std::pair<long,long>& h) const {
-            auto h1 = std::hash<long>{}(h.first);
-            auto h2 = std::hash<long>{}(h.second);
+        std::size_t operator () (const std::pair<flecs::entity_t,flecs::entity_t>& h) const {
+            auto h1 = std::hash<flecs::entity_t>{}(h.first);
+            auto h2 = std::hash<flecs::entity_t>{}(h.second);
             return h1 ^ (h2 << 1);
         }
     };
@@ -87,7 +87,7 @@ namespace physics {
     struct CollisionRecordList {
         std::vector<CollisionRecord> records;
         std::vector<SignificantCollisionRecord> significant_collisions;
-        std::unordered_map<std::pair<long,long>, CollisionInfo, IdPairHash> collisions_info;
+        std::unordered_map<std::pair<flecs::entity_t,flecs::entity_t>, CollisionInfo, IdPairHash> collisions_info;
     };
 
     struct SpatialHashingGrid {

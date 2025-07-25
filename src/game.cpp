@@ -6,7 +6,6 @@
 #include <iostream>
 #include <ostream>
 
-#include <linux/perf_event.h>
 #if defined(EMSCRIPTEN)
 #include <emscripten/emscripten.h>
 #endif
@@ -64,7 +63,7 @@ void Game::init() {
     m_world.set<flecs::Rest>({});
     m_world.set_threads(static_cast<int>(std::thread::hardware_concurrency()));
 #endif
-
+    physics::PhysicsModule::reset_systems_list();
     m_world.import<core::CoreModule>();
     m_world.import<input::InputModule>();
     m_world.import<rendering::RenderingModule>();
@@ -373,6 +372,7 @@ void Game::init() {
 void Game::run() {
     // ON START
     m_world.progress();
+    //m_world.progress(GetFrameTime());
 
 #if defined(EMSCRIPTEN)
     emscripten_set_main_loop_arg(UpdateDrawFrameWeb, this, 0, 1);
@@ -388,6 +388,9 @@ void Game::run() {
     //--------------------------------------------------------------------------------------
     CloseWindow(); // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
+
+    ecs_fini(m_world.c_ptr());
+
 }
 void Game::set_collision_strategy(physics::PHYSICS_COLLISION_STRATEGY strategy) {
     physics::PhysicsModule::set_collision_strategy(strategy);

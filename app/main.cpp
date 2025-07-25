@@ -1,7 +1,7 @@
 #include "game.h"
 #include <iostream>
 #ifdef __linux__
-#include <perfcpp/event_counter.h>
+//#include <perfcpp/event_counter.h>
 #endif
 int main() {
 #ifdef EMSCRIPTEN

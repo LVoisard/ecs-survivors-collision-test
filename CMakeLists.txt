@@ -57,13 +57,16 @@ if (NOT flecs_FOUND) # If there's none, fetch and build flecs
     endif ()
 endif ()
 
-include(FetchContent)
-FetchContent_Declare(
-        perf-cpp-external
-        GIT_REPOSITORY "https://github.com/jmuehlig/perf-cpp"
-        GIT_TAG "v0.12.2"
-)
-FetchContent_MakeAvailable(perf-cpp-external)
+
+    include(FetchContent)
+    FetchContent_Declare(
+            perf-cpp-external
+            GIT_REPOSITORY "https://github.com/jmuehlig/perf-cpp"
+            GIT_TAG "v0.12.2"
+    )
+if (UNIX)
+    FetchContent_MakeAvailable(perf-cpp-external)
+endif (UNIX)
 
 # Our Project
 
@@ -73,11 +76,23 @@ add_subdirectory("external/tmxlite/tmxlite")
 add_subdirectory("include")
 add_subdirectory("app")
 
-target_link_libraries(${LIBRARY_NAME} PUBLIC
+set(libs
         raylib
         flecs::flecs_static
         tmxlite
-        perf-cpp
 )
+
+if (UNIX)
+    list(APPEND libs perf-cpp)
+endif (UNIX)
+
+target_link_libraries(${LIBRARY_NAME} PUBLIC
+        ${libs}
+)
+
+message(STATUS "CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
+message(STATUS "PLATFORM_ID=$<PLATFORM_ID>")
+message(STATUS "WIN32=${WIN32} UNIX=${UNIX} APPLE=${APPLE}")
+message(STATUS "libs='${libs}'")
 
 

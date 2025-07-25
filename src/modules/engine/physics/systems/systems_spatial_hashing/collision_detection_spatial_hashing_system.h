@@ -7,7 +7,6 @@
 
 #include <flecs.h>
 
-#include "collision_detection_system.h"
 #include "modules/engine/core/components.h"
 #include "modules/engine/physics/components.h"
 

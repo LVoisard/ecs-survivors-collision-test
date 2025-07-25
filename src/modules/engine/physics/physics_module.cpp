@@ -16,59 +16,65 @@
 #include "modules/engine/core/core_module.h"
 #include "modules/engine/rendering/components.h"
 #include "systems/add_collided_with_system.h"
-#include "systems/collision_cleanup_system.h"
-#include "systems/collision_detection_relationship_spatial_hashing_system.h"
-#include "systems/collision_detection_spatial_hashing_system.h"
 #include "systems/collision_detection_system.h"
 #include "systems/collision_resolution_system.h"
-#include "systems/init_spatial_hashing_grid_system.h"
 #include "systems/reset_desired_velocity_system.h"
-#include "systems/update_cell_entities_system.h"
-#include "systems/update_grid_on_window_resized_system.h"
-#include "systems/update_grid_system.h"
 #include "systems/update_position_system.h"
 #include "systems/update_velocity_system.h"
 
+#include "systems/systems_relationship/collision_detection_relationship_system.h"
+#include "systems/systems_relationship/cleanup.h"
+
+#include "systems/systems_dont_fragment_relationship/collision_detection_dont_fragment_relationship_system.h"
+#include "systems/systems_dont_fragment_relationship/cleanup.h"
+
+#include "systems/systems_record_list/collision_detection_record_list_system.h"
+#include "systems/systems_record_list/cleanup.h"
+
+#include "systems/systems_create_entity/collision_detection_create_entity_system.h"
+#include "systems/systems_create_entity/cleanup.h"
+
+#include "systems/systems_spatial_hashing/collision_detection_spatial_hashing_system.h"
+#include "systems/systems_spatial_hashing/init_spatial_hashing_grid_system.h"
+#include "systems/systems_spatial_hashing/update_cell_entities_system.h"
+#include "systems/systems_spatial_hashing/update_grid_on_window_resized_system.h"
+#include "systems/systems_spatial_hashing/update_grid_system.h"
+
+#include "systems/systems_spatial_hashing_relationship/collision_detection_relationship_spatial_hashing_system.h"
+
 namespace physics {
+
+    void enable_system(flecs::entity &e, bool enabled) { enabled ? e.enable() : e.disable(); }
+
+    PhysicsModule::~PhysicsModule() {
+        m_collision_detection_spatial_hashing_system.destruct();
+        m_collision_detection_spatial_ecs.destruct();
+        m_collision_detection_naive_system.destruct();
+        //queries::visible_collision_bodies_query.destruct();
+        //queries::box_collider_query.destruct();
+
+    }
+
     void PhysicsModule::set_collision_strategy(PHYSICS_COLLISION_STRATEGY strategy) {
-
-        // relationship_systems.clear();
-        // relationship_dontfragment_systems.clear();
-        // collision_entities_systems.clear();
-        // collision_list_systems.clear();
-        // spatial_hashing_systems.clear();
-        // spatial_hashing_relationship_systems.clear();
-
-        std::cout << relationship_systems.size() << std::endl;
-
-        for (auto e: relationship_systems) {
-            strategy == COLLISION_RELATIONSHIP ? e.enable() : e.disable();
-        }
-        for (auto e: relationship_dontfragment_systems) {
-            strategy == COLLISION_RELATIONSHIP_DONTFRAGMENT ? e.enable() : e.disable();
-        }
-        for (auto e: collision_entities_systems) {
-            strategy == COLLISION_ENTITY ? e.enable() : e.disable();
-        }
-        for (auto e: collision_list_systems) {
-            strategy == RECORD_LIST ? e.enable() : e.disable();
-        }
-        for (auto e: spatial_hashing_systems) {
-            strategy == SPATIAL_HASH ? e.enable() : e.disable();
-        }
-        for (auto e: spatial_hashing_relationship_systems) {
-            strategy == SPATIAL_HASH_RELATIONSHIP ? e.enable() : e.disable();
+        for(int i = 0; i < collision_method_systems.size(); i++) {
+            for (auto e: collision_method_systems[i]) {
+                const auto s = static_cast<PHYSICS_COLLISION_STRATEGY>(i);
+                enable_system(e, strategy == s);
+            }
         }
     }
+
+
     void PhysicsModule::reset_systems_list() {
-        physics::relationship_systems.clear();
-        physics::relationship_dontfragment_systems.clear();
-        physics::collision_entities_systems.clear();
-        physics::collision_list_systems.clear();
-        physics::spatial_hashing_systems.clear();
-        physics::spatial_hashing_relationship_systems.clear();
+        for(auto s: collision_method_systems) {
+            for(auto e: s) {
+               //e.destruct();
+            }
+            s.clear();
+        }
+        collision_method_systems.clear();
+        collision_method_systems = std::vector<std::vector<flecs::entity>>(PHYSICS_COLLISION_STRATEGY::COUNT);
     }
-
 
     void PhysicsModule::register_components(flecs::world &world) {
         world.component<Velocity2D>();
@@ -88,38 +94,58 @@ namespace physics {
     void PhysicsModule::register_systems(flecs::world &world) {
         m_physicsTick = world.timer().interval(PHYSICS_TICK_LENGTH);
 
-        spatial_hashing_systems.push_back(world.system<SpatialHashingGrid, core::GameSettings>("init grid")
-                                                  .term_at(0)
-                                                  .singleton()
-                                                  .term_at(1)
-                                                  .singleton()
+
+        collision_method_systems[SPATIAL_HASH].push_back(world.system<SpatialHashingGrid, core::GameSettings>("init grid normal")
+                                                  .term_at(0).singleton()
+                                                  .term_at(1).singleton()
                                                   .kind(flecs::OnStart)
                                                   .each(systems::init_spatial_hashing_grid_system));
 
-        spatial_hashing_systems.push_back(
+        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(world.system<SpatialHashingGrid, core::GameSettings>("init grid relationship")
+                                                  .term_at(0).singleton()
+                                                  .term_at(1).singleton()
+                                                  .kind(flecs::OnStart)
+                                                  .each(systems::init_spatial_hashing_grid_system));
+
+        collision_method_systems[SPATIAL_HASH].push_back(
                 world.system<SpatialHashingGrid, core::GameSettings>("update grid on window resized")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
+                        .term_at(0).singleton()
+                        .term_at(1).singleton()
                         .kind(flecs::OnUpdate)
                         .each(systems::update_grid_on_window_resized_system));
 
-        spatial_hashing_systems.push_back(
+        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
+                world.system<SpatialHashingGrid, core::GameSettings>("update grid on window resized relationship")
+                        .term_at(0).singleton()
+                        .term_at(1).singleton()
+                        .kind(flecs::OnUpdate)
+                        .each(systems::update_grid_on_window_resized_system));
+
+        collision_method_systems[SPATIAL_HASH].push_back(
                 world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set")
-                        .term_at(1)
-                        .singleton()
+                        .term_at(1).singleton()
                         .event(flecs::OnSet)
                         .each(systems::reset_grid));
 
-        spatial_hashing_systems.push_back(
+        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
+                world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set relationship")
+                        .term_at(1).singleton()
+                        .event(flecs::OnSet)
+                        .each(systems::reset_grid));
+
+        collision_method_systems[SPATIAL_HASH].push_back(
                 world.system<SpatialHashingGrid, rendering::TrackingCamera, core::GameSettings, GridCell>("update grid")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
-                        .term_at(2)
-                        .singleton()
+                        .term_at(0).singleton()
+                        .term_at(1).singleton()
+                        .term_at(2).singleton()
+                        .kind(flecs::PreUpdate)
+                        .each(systems::update_grid_system));
+
+        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
+                world.system<SpatialHashingGrid, rendering::TrackingCamera, core::GameSettings, GridCell>("update grid relationship")
+                        .term_at(0).singleton()
+                        .term_at(1).singleton()
+                        .term_at(2).singleton()
                         .kind(flecs::PreUpdate)
                         .each(systems::update_grid_system));
 
@@ -142,10 +168,16 @@ namespace physics {
                 .tick_source(m_physicsTick)
                 .each(systems::update_position_system);
 
-        spatial_hashing_systems.push_back(
+        collision_method_systems[SPATIAL_HASH].push_back(
                 world.system<SpatialHashingGrid, Collider, core::Position2D>("update entity cells")
-                        .term_at(0)
-                        .singleton()
+                        .term_at(0).singleton()
+                        .without<StaticCollider>()
+                        .kind<UpdateBodies>()
+                        .each(systems::update_cell_entities_system));
+
+        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
+                world.system<SpatialHashingGrid, Collider, core::Position2D>("update entity cells relationship")
+                        .term_at(0).singleton()
                         .without<StaticCollider>()
                         .kind<UpdateBodies>()
                         .each(systems::update_cell_entities_system));
@@ -153,17 +185,16 @@ namespace physics {
 
         m_collision_detection_naive_system = world.system<CollisionRecordList, const core::Position2D, const Collider>(
                                                           "Detect Collisions ECS (Naive Record List) non-static")
-                                                     .term_at(0)
-                                                     .singleton()
+                                                     .term_at(0).singleton()
                                                      .with<rendering::Visible>()
                                                      .kind<Detection>()
                                                      .multi_threaded()
                                                      .tick_source(m_physicsTick)
-                                                     .each(systems::collision_detection_non_static_system);
+                                                     .each(systems::collision_detection_non_static_record_list_system);
         m_collision_detection_naive_system.disable();
-        collision_list_systems.push_back(m_collision_detection_naive_system);
+        collision_method_systems[RECORD_LIST].push_back(m_collision_detection_naive_system);
 
-        relationship_systems.push_back(
+        collision_method_systems[COLLISION_RELATIONSHIP].push_back(
                 world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship)")
                         .with<rendering::Visible>()
                         .kind<Detection>()
@@ -171,126 +202,101 @@ namespace physics {
                         .tick_source(m_physicsTick)
                         .each(systems::collision_detection_non_static_relationship_system));
 
-        relationship_dontfragment_systems.push_back(
+        collision_method_systems[COLLISION_RELATIONSHIP_DONTFRAGMENT].push_back(
                 world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship non-frag)")
                         .with<rendering::Visible>()
                         .kind<Detection>()
+                        .multi_threaded()
                         .tick_source(m_physicsTick)
                         .each(systems::collision_detection_non_static_relationship_non_fragmenting_system));
 
-        world.system<const core::Position2D, const Collider>("Detect Collisions ECS (entity)")
+        collision_method_systems[COLLISION_ENTITY].push_back(
+            world.system<const core::Position2D, const Collider>("Detect Collisions ECS (entity)")
                 .with<rendering::Visible>()
                 .kind<Detection>()
                 .tick_source(m_physicsTick)
-                .each(systems::collision_detection_non_static_relationship_system)
-                .disable();
-
-
-        // need a second pass to collide static colliders. Even when static objects are out of the screen we compute the
-        // collision
-        world.system<CollisionRecordList, const core::Position2D, const Collider>(
-                     "Detect Collisions ECS (Naive Record List) static")
-                .term_at(0)
-                .singleton()
-                .with<StaticCollider>()
-                .kind<Detection>()
-                .multi_threaded()
-                .tick_source(m_physicsTick)
-                .each(systems::collision_detection_static_system);
+                .immediate()
+                .each([world] (flecs::iter& it, size_t i, const core::Position2D& pos, const Collider& col) {
+                    systems::collision_detection_non_static_entity_system(world, it, i, pos, col );
+                }));
 
         m_collision_detection_spatial_hashing_system =
                 world.system<CollisionRecordList, SpatialHashingGrid, GridCell>(
                              "Detect Collisions ECS non-static with spatial hashing")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
+                        .term_at(0).singleton()
+                        .term_at(1).singleton()
                         .kind<Detection>()
                         .multi_threaded()
                         .tick_source(m_physicsTick)
                         .each(systems::collision_detection_spatial_hashing_system);
         // m_collision_detection_spatial_hashing_system.disable();
-        spatial_hashing_systems.push_back(m_collision_detection_spatial_hashing_system);
+        collision_method_systems[SPATIAL_HASH].push_back(m_collision_detection_spatial_hashing_system);
 
         m_collision_detection_spatial_ecs =
                 world.system<CollisionRecordList, SpatialHashingGrid, GridCell>("test collision with relationship")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
+                        .term_at(0).singleton()
+                        .term_at(1).singleton()
                         .kind<Detection>()
                         .multi_threaded()
                         .tick_source(m_physicsTick)
                         .each(systems::collision_detection_relationship_spatial_hashing_system);
         m_collision_detection_spatial_ecs.disable();
-        spatial_hashing_relationship_systems.push_back(m_collision_detection_spatial_ecs);
+        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(m_collision_detection_spatial_ecs);
 
-        collision_list_systems.push_back(
+        collision_method_systems[RECORD_LIST].push_back(
                 world.system<CollisionRecordList>("Collision Resolution ECS (Naive Record List) 1")
-                        .term_at(0)
-                        .singleton()
+                        .term_at(0).singleton()
                         .kind<Resolution>()
                         .tick_source(m_physicsTick)
-                        .each(systems::collision_resolution_system));
-        spatial_hashing_systems.push_back(
-                world.system<CollisionRecordList>("Collision Resolution ECS (Naive Record List) 2")
-                        .term_at(0)
-                        .singleton()
-                        .kind<Resolution>()
-                        .tick_source(m_physicsTick)
-                        .each(systems::collision_resolution_system));
+                        .each(systems::collision_resolution_rec_list_system));
 
-        collision_list_systems.push_back(world.system<CollisionRecordList>("Add CollidedWith Component 1")
-                                                 .term_at(0)
-                                                 .singleton()
+        collision_method_systems[SPATIAL_HASH].push_back(
+                world.system<CollisionRecordList>("Collision Resolution ECS (spatial hash) ")
+                        .term_at(0).singleton()
+                        .kind<Resolution>()
+                        .tick_source(m_physicsTick)
+                        .each(systems::collision_resolution_rec_list_system));
+
+        collision_method_systems[RECORD_LIST].push_back(world.system<CollisionRecordList>("Add CollidedWith Component 1")
+                                                 .term_at(0).singleton()
                                                  .kind<Resolution>()
                                                  .tick_source(m_physicsTick)
                                                  .each(systems::add_collided_with_system));
-        spatial_hashing_systems.push_back(world.system<CollisionRecordList>("Add CollidedWith Component 2")
-                                                  .term_at(0)
-                                                  .singleton()
+        collision_method_systems[SPATIAL_HASH].push_back(world.system<CollisionRecordList>("Add CollidedWith Component 2")
+                                                  .term_at(0).singleton()
                                                   .kind<Resolution>()
                                                   .tick_source(m_physicsTick)
                                                   .each(systems::add_collided_with_system));
 
-        world.system("Collision Cleanup")
+        collision_method_systems[COLLISION_RELATIONSHIP].push_back(world.system("Collision Cleanup (relationship)")
                 .with<Collider>()
                 .kind<CollisionCleanup>()
                 .immediate()
                 .tick_source(m_physicsTick)
-                .each(systems::collision_cleanup_system);
+                .each(systems::collision_cleanup_system));
 
-        world.system("Collision Cleanup 3")
+        collision_method_systems[COLLISION_RELATIONSHIP_DONTFRAGMENT].push_back(world.system("Collision Cleanup (dont fragment relationship)")
                 .with<NonFragmentingCollidedWith>(flecs::Wildcard)
                 .with<Collider>()
                 .kind<CollisionCleanup>()
                 .immediate()
                 .tick_source(m_physicsTick)
-                .each(systems::collision_cleanup_non_frag_system);
+                .each(systems::collision_cleanup_non_frag_system));
 
-        world.system("Collision Cleanup 2")
-                .with<Collider>()
+        collision_method_systems[COLLISION_ENTITY].push_back(world.system("Collision Cleanup (entity)")
                 .kind<CollisionCleanup>()
+                .immediate()
                 .tick_source(m_physicsTick)
-                .each(systems::collision_cleanup_system_2);
+                .run(systems::collision_cleanup_entity));
 
-
-        // spatial_hashing_systems.push_back(world.system("Collision Cleanup 2")
-        //         .with<Collider>()
-        //         .kind<CollisionCleanup>()
-        //         .tick_source(m_physicsTick)
-        //         .each(systems::collision_cleanup_system));
-
-        collision_list_systems.push_back(world.system<CollisionRecordList>("Collision Cleanup List 1")
-                                                 .term_at(0)
-                                                 .singleton()
+        collision_method_systems[RECORD_LIST].push_back(world.system<CollisionRecordList>("Collision Cleanup List 1")
+                                                 .term_at(0).singleton()
                                                  .kind<CollisionCleanup>()
                                                  .tick_source(m_physicsTick)
                                                  .each(systems::collision_cleanup_list_system));
 
-        spatial_hashing_systems.push_back(world.system<CollisionRecordList>("Collision Cleanup List 2")
-                                                  .term_at(0)
-                                                  .singleton()
+        collision_method_systems[SPATIAL_HASH].push_back(world.system<CollisionRecordList>("Collision Cleanup List 2")
+                                                  .term_at(0).singleton()
                                                   .kind<CollisionCleanup>()
                                                   .tick_source(m_physicsTick)
                                                   .each(systems::collision_cleanup_list_system));

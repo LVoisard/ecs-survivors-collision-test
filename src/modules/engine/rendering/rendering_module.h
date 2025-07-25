@@ -13,6 +13,7 @@ namespace rendering {
     class RenderingModule: public BaseModule<RenderingModule> {
     public:
         RenderingModule(flecs::world world): BaseModule(world) {}
+        ~RenderingModule();
 
     private:
         void register_components(flecs::world world);

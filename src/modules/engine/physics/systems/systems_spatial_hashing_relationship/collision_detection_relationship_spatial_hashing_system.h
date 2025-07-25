@@ -7,7 +7,6 @@
 
 #include <flecs.h>
 
-#include "collision_detection_system.h"
 #include "modules/engine/core/components.h"
 #include "modules/engine/physics/components.h"
 
@@ -51,6 +50,7 @@ namespace physics::systems {
                     });
             }
         }
+
         if (collisions.empty()) return;
         list_mutex.lock();
         list.records.insert(list.records.end(), collisions.begin(), collisions.end());

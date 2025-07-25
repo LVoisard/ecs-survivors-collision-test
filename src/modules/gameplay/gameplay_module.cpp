@@ -82,22 +82,22 @@ namespace gameplay {
                 .term_at(0).parent()
                 .each(systems::fire_projectile_system);
 
-        world.system("delete if hit wall and no bounce")
-                .with<physics::CollidedWith>(flecs::Wildcard)
-                .with<Projectile>()
-                .without<Bounce>()
-                .kind<OnCollisionDetected>()
-                .immediate()
-                .each(systems::projectile_no_bounce_collided_system);
-
-        world.system<physics::CollisionRecordList, Bounce, physics::Velocity2D, rendering::Rotation>(
-                    "Bounce if hit wall")
-                .with<physics::CollidedWith>(flecs::Wildcard)
-                .with<Projectile>()
-                .kind<OnCollisionDetected>()
-                .term_at(0).singleton()
-                .immediate()
-                .each(systems::projectile_bounce_collided_system);
+        // world.system("delete if hit wall and no bounce")
+        //         .with<physics::CollidedWith>(flecs::Wildcard)
+        //         .with<Projectile>()
+        //         .without<Bounce>()
+        //         .kind<OnCollisionDetected>()
+        //         .immediate()
+        //         .each(systems::projectile_no_bounce_collided_system);
+        //
+        // world.system<physics::CollisionRecordList, Bounce, physics::Velocity2D, rendering::Rotation>(
+        //             "Bounce if hit wall")
+        //         .with<physics::CollidedWith>(flecs::Wildcard)
+        //         .with<Projectile>()
+        //         .kind<OnCollisionDetected>()
+        //         .term_at(0).singleton()
+        //         .immediate()
+        //         .each(systems::projectile_bounce_collided_system);
 
         world.system("no pierce or chain")
                 .with<Projectile>()
@@ -107,23 +107,31 @@ namespace gameplay {
                 .immediate()
                 .each(systems::project_no_effect_collided_system);
 
-        world.system<Pierce>("apply pierce mod")
-                .with<physics::CollidedWith>(flecs::Wildcard)
+        world.system("no pierce or chain (non-frag)")
+                .with<Projectile>()
+                .without<Pierce>().without<Chain>()
+                .with<physics::NonFragmentingCollidedWith>(flecs::Wildcard)
                 .kind<OnCollisionDetected>()
                 .immediate()
-                .each(systems::projectile_pierce_collided_system);
+                .each(systems::project_no_effect_collided_system);
 
-        world.system<Chain, physics::Velocity2D, core::Position2D, rendering::Rotation, Attack>("apply chain mod")
-                .with<physics::CollidedWith>(flecs::Wildcard)
-                .kind<OnCollisionDetected>()
-                .immediate()
-                .each(systems::projectile_chain_collided_system);
-
-        world.system<Split, physics::Velocity2D, core::Position2D, rendering::Rotation, Attack>("apply split mod")
-                .with<physics::CollidedWith>(flecs::Wildcard)
-                .kind<OnCollisionDetected>()
-                .immediate()
-                .each(systems::projectile_split_collision_system);
+        // world.system<Pierce>("apply pierce mod")
+        //         .with<physics::CollidedWith>(flecs::Wildcard)
+        //         .kind<OnCollisionDetected>()
+        //         .immediate()
+        //         .each(systems::projectile_pierce_collided_system);
+        //
+        // world.system<Chain, physics::Velocity2D, core::Position2D, rendering::Rotation, Attack>("apply chain mod")
+        //         .with<physics::CollidedWith>(flecs::Wildcard)
+        //         .kind<OnCollisionDetected>()
+        //         .immediate()
+        //         .each(systems::projectile_chain_collided_system);
+        //
+        // world.system<Split, physics::Velocity2D, core::Position2D, rendering::Rotation, Attack>("apply split mod")
+        //         .with<physics::CollidedWith>(flecs::Wildcard)
+        //         .kind<OnCollisionDetected>()
+        //         .immediate()
+        //         .each(systems::projectile_split_collision_system);
 
         world.system<Damage>("collision detected, deal damage to target")
                 .with<physics::CollidedWith>(flecs::Wildcard)

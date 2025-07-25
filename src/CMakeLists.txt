@@ -6,6 +6,10 @@ set(LIBRARY_HEADERS
 set(LIBRARY_INCLUDES
         "./")
 
+if (UNIX)
+    list(APPEND LIBRARY_INCLUDES ${perf-cpp-external_SOURCE_DIR}/include/})
+endif (UNIX)
+
 add_library(${LIBRARY_NAME} STATIC
         ${LIBRARY_SOURCES}
         ${LIBRARY_HEADERS})
@@ -13,12 +17,10 @@ add_library(${LIBRARY_NAME} STATIC
 add_subdirectory("modules")
 
 target_include_directories(${LIBRARY_NAME} PUBLIC
-        ${LIBRARY_INCLUDES}
-        ${perf-cpp-external_SOURCE_DIR}/include/)
+        ${LIBRARY_INCLUDES})
 
 target_link_libraries(${LIBRARY_NAME} PUBLIC
         raylib
         flecs::flecs_static
-        tmxlite
-        perf-cpp)
+        tmxlite)
 

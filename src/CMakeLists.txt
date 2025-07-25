@@ -6,9 +6,6 @@ set(LIBRARY_HEADERS
 set(LIBRARY_INCLUDES
         "./")
 
-if (UNIX)
-    list(APPEND LIBRARY_INCLUDES ${perf-cpp-external_SOURCE_DIR}/include/})
-endif (UNIX)
 
 add_library(${LIBRARY_NAME} STATIC
         ${LIBRARY_SOURCES}

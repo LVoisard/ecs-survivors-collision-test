@@ -14,6 +14,10 @@
 #include "modules/engine/core/core_module.h"
 
 namespace rendering::gui {
+        static auto gui_canvas = "gui_canvas";
+        static auto menu_bar = "menu_bar";
+        static flecs::entity get_gui_canvas(flecs::world world) {return world.lookup(gui_canvas);}
+        static flecs::entity get_menu_bar(flecs::world world) {return world.lookup(menu_bar);}
     class GUIModule : public BaseModule<GUIModule> {
     public:
         // do not add implementation to the constructor
@@ -21,17 +25,7 @@ namespace rendering::gui {
         };
 
         ~GUIModule() {
-            gui_canvas.destruct();
-            button_prefab.destruct();
-            panel_prefab.destruct();
-            menu_bar.destruct();
         }
-
-
-        inline static flecs::entity gui_canvas;
-        inline static flecs::entity button_prefab;
-        inline static flecs::entity panel_prefab;
-        inline static flecs::entity menu_bar;
 
         static Color font_color() { return LIGHTGRAY; }
 

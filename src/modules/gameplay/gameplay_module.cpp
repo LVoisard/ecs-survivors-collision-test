@@ -12,15 +12,17 @@
 #include "modules/engine/rendering/components.h"
 #include <unordered_set>
 
-#include "pipeline_steps.h"
 #include "modules/engine/physics/physics_module.h"
 #include "modules/engine/physics/pipeline_steps.h"
 #include "modules/engine/rendering/gui/gui_module.h"
+#include "modules/engine/rendering/gui/prefabs.h"
+#include "pipeline_steps.h"
 #include "systems/add_bounce_system.h"
 #include "systems/add_chain_system.h"
 #include "systems/add_multiproj_system.h"
 #include "systems/add_pierce_system.h"
 #include "systems/add_split_system.h"
+#include "systems/check_if_dead_system.h"
 #include "systems/create_health_bar_system.h"
 #include "systems/deal_damage_on_collision_system.h"
 #include "systems/decrement_bounce_system.h"
@@ -28,6 +30,7 @@
 #include "systems/decrement_multiproj_system.h"
 #include "systems/decrement_pierce_system.h"
 #include "systems/fire_projectile_system.h"
+#include "systems/give_experience_system.h"
 #include "systems/increment_bounce_system.h"
 #include "systems/increment_chain_system.h"
 #include "systems/increment_multiproj_system.h"
@@ -49,8 +52,6 @@
 #include "systems/take_damage_system.h"
 #include "systems/update_cooldown_system.h"
 #include "systems/update_health_bar_system.h"
-#include "systems/check_if_dead_system.h"
-#include "systems/give_experience_system.h"
 
 namespace gameplay {
     void GameplayModule::register_components(flecs::world world) {
@@ -322,8 +323,8 @@ namespace gameplay {
     }
 
     void GameplayModule::register_entities(flecs::world world) {
-        auto dropdown = world.entity("gameplay_dropdown").child_of(rendering::gui::GUIModule::menu_bar)
-                .set<rendering::gui::MenuBarTab>({"Gameplay Tools", 25}).disable();
+        auto dropdown = world.entity("gameplay_dropdown").child_of<rendering::gui::prefabs::MenuBar>()
+                .set<rendering::gui::MenuBarTab>({"Gameplay Tools", 25});
 
         world.entity().child_of(dropdown)
                 .set<rendering::gui::MenuBarTabItem>({

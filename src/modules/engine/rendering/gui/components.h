@@ -27,7 +27,6 @@ namespace rendering::gui {
     };
 
     struct InteractableElement {
-        Color normal_tint;
         Color selected_tint;
         Color hovered_tint;
     };
@@ -35,6 +34,7 @@ namespace rendering::gui {
     struct TexturedElement {
         Texture2D texture;
         NPatchInfo info;
+        Color tint;
     };
 
     struct ButtonCallback {
@@ -56,13 +56,6 @@ namespace rendering::gui {
         int border_size;
         Color border_color;
         Color fill_color;
-    };
-
-
-
-    struct Panel {
-        Texture2D texture;
-        NPatchInfo info;
     };
 
     struct MenuBar {

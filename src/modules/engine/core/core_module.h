@@ -17,7 +17,6 @@ namespace core {
         // do not add anything to the constructor, instead change the base class
         CoreModule(flecs::world& world): BaseModule(world) {}
         ~CoreModule();
-        GameSettings* game_settings;
     private:
         void register_components(flecs::world &world);
 

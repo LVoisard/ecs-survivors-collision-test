@@ -9,7 +9,7 @@
 #include "components.h"
 
 namespace rendering::queries {
-    inline flecs::query<Renderable> entity_count_query;
-    inline flecs::query<Renderable> entity_visible_count_query;
+    //inline flecs::query<Renderable> entity_count_query;
+    //inline flecs::query<Renderable> entity_visible_count_query;
 }
 #endif //RENDERING_QUERIES_H

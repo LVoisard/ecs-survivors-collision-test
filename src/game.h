@@ -20,9 +20,11 @@ public:
 
 private:
 
+    std::vector<flecs::entity> modules;
+
     void reset();
     void UpdateDrawFrameDesktop();
-    static void UpdateDrawFrameWeb(void* world);
+    static void UpdateDrawFrameWeb(void *world);
     flecs::world m_world;
     std::string m_windowName;
     int m_windowHeight;

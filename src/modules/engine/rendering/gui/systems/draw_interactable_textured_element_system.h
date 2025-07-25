@@ -20,7 +20,7 @@ namespace rendering::gui::systems {
         } else if (e.has<InteractableElementState>(Pressed)) {
             tint = inter.selected_tint;
         } else {
-            tint = inter.normal_tint;
+            tint = tex.tint;
         }
 
         DrawTextureNPatch(tex.texture, tex.info, rect, {0,0}, 0.0f, tint);

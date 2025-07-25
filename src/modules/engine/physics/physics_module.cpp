@@ -13,10 +13,8 @@
 #include "modules/engine/core/components.h"
 #include "queries.h"
 
-#include "modules/engine/core/core_module.h"
 #include "modules/engine/rendering/components.h"
 #include "systems/add_collided_with_system.h"
-#include "systems/collision_detection_system.h"
 #include "systems/collision_resolution_system.h"
 #include "systems/reset_desired_velocity_system.h"
 #include "systems/update_position_system.h"
@@ -47,11 +45,6 @@ namespace physics {
     void enable_system(flecs::entity &e, bool enabled) { enabled ? e.enable() : e.disable(); }
 
     PhysicsModule::~PhysicsModule() {
-        m_collision_detection_spatial_hashing_system.destruct();
-        m_collision_detection_spatial_ecs.destruct();
-        m_collision_detection_naive_system.destruct();
-        //queries::visible_collision_bodies_query.destruct();
-        //queries::box_collider_query.destruct();
 
     }
 
@@ -68,7 +61,7 @@ namespace physics {
     void PhysicsModule::reset_systems_list() {
         for(auto s: collision_method_systems) {
             for(auto e: s) {
-               //e.destruct();
+               e.destruct();
             }
             s.clear();
         }
@@ -85,10 +78,10 @@ namespace physics {
     }
 
     void PhysicsModule::register_queries(flecs::world &world) {
-        queries::visible_collision_bodies_query =
-                world.query_builder<core::Position2D, Collider>().with<rendering::Visible>().build();
+        // queries::visible_collision_bodies_query =
+        //        world.query_builder<core::Position2D, Collider>().with<rendering::Visible>().build();
 
-        queries::box_collider_query = world.query_builder<core::Position2D, Collider>().with<BoxCollider>().build();
+        // queries::box_collider_query = world.query_builder<core::Position2D, Collider>().with<BoxCollider>().build();
     }
 
     void PhysicsModule::register_systems(flecs::world &world) {

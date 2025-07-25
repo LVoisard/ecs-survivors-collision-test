@@ -9,6 +9,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <functional>
+#include <mutex>
 
 #include "components.h"
 #include "modules/engine/core/components.h"

@@ -8,8 +8,8 @@
 #include <flecs.h>
 #include <mutex>
 #include <vector>
-#include "modules\engine\physics\components.h"
-#include "modules\engine\core\components.h"
+#include "modules/engine/physics/components.h"
+#include "modules/engine/core/components.h"
 
 namespace physics::systems {
     inline void collision_detection_non_static_record_list_system(flecs::iter &self_it, size_t self_id, CollisionRecordList &list,

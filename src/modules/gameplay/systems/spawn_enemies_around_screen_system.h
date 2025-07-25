@@ -30,20 +30,23 @@ namespace gameplay::systems {
             randY += camera.camera.target.y - camera.camera.offset.y - 100;
             bool is_valid = true;
 
-            physics::queries::box_collider_query.run([&](flecs::iter &it) {
-                while (it.next()) {
-                    if (!is_valid) break;
-                    auto pos = it.field<core::Position2D>(0);
-                    auto box = it.field<physics::Collider>(1);
-                    for (auto j: it) {
-                        const Rectangle rec = {pos[j].value.x + box[j].bounds.x, pos[j].value.y + box[j].bounds.y, box[j].bounds.width, box[j].bounds.height};
-                        if (CheckCollisionPointRec({randX, randY}, rec)) {
-                            is_valid = false;
-                            break;
-                        }
-                    }
+            auto q = iter.world().query<core::Position2D, physics::Collider>();
+
+            q.each([&](flecs::entity e, core::Position2D &pos, physics::Collider &box) {
+                if (!is_valid) return;
+
+                Rectangle rec = {
+                    pos.value.x + box.bounds.x,
+                    pos.value.y + box.bounds.y,
+                    box.bounds.width,
+                    box.bounds.height
+                };
+
+                if (CheckCollisionPointRec({randX, randY}, rec)) {
+                    is_valid = false;
                 }
             });
+
 
             outside_side_switch = !outside_side_switch;
 

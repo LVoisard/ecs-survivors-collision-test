@@ -15,6 +15,7 @@
 #include <raymath.h>
 
 #include "modules/engine/physics/physics_module.h"
+#include "modules/engine/rendering/gui/prefabs.h"
 #include "systems/debug_closest_enemy_to_player_system.h"
 #include "systems/debug_collidable_entities_system.h"
 #include "systems/debug_colliders_system.h"
@@ -100,7 +101,7 @@ namespace debug {
     }
 
     void DebugModule::register_entities(flecs::world &world) {
-        auto dropdown = world.entity("debug_dropdown").child_of(rendering::gui::GUIModule::menu_bar)
+        auto dropdown = world.entity("debug_dropdown").child_of<rendering::gui::prefabs::MenuBar>()
                 .set<rendering::gui::MenuBarTab>({"Debug Tools", 25});
 
         world.entity("debug_collisions_item_0").child_of(dropdown)

@@ -26,7 +26,7 @@
 
 namespace core {
     CoreModule::~CoreModule() {
-        //queries::position_and_tag_query.destruct();
+        queries::position_and_tag_query = {};
     }
     void CoreModule::register_components(flecs::world &world) {
         world.component<Position2D>();
@@ -94,6 +94,6 @@ namespace core {
                     "Remove empty tables to avoid fragmentation in collision (CHANGE TO DONTFRAGMENT WHEN FEATURE IS OUT)")
                 //.interval(0.25f)
                 .kind(flecs::PostFrame)
-                .run([world](flecs::iter &it) { systems::remove_empty_tables_system(world); });
+                .run([world](flecs::iter &it) { systems::remove_empty_tables_system(world); }).disable();
     }
 }

@@ -9,8 +9,9 @@
 #define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
 
-#include "components.h"
 #include "../../rendering/pipeline_steps.h"
+#include "components.h"
+#include "prefabs.h"
 #include "systems/check_window_resized_system.h"
 #include "systems/draw_interactable_textured_element_system.h"
 #include "systems/draw_menu_bar_system.h"
@@ -20,10 +21,10 @@
 #include "systems/draw_panel_system.h"
 #include "systems/draw_text_system.h"
 #include "systems/load_style_system.h"
+#include "systems/parent_rectangle_changed_disabled_observer.h"
 #include "systems/parent_rectangle_changed_observer.h"
 #include "systems/set_anchored_position_system.h"
 #include "systems/set_gui_canvas_size_system.h"
-#include "systems/parent_rectangle_changed_disabled_observer.h"
 
 #include "systems/disable_children_on_disable_system.h"
 #include "systems/enable_children_on_enable_system.h"
@@ -40,6 +41,7 @@ namespace rendering::gui {
         world.component<Text>();
         world.component<Outline>();
         world.component<Font>();
+        world.component<prefabs::Panel>().add(flecs::Inheritable);
         world.set<FontAtlas>({
             std::unordered_map<int, Font>{
                 {FONT_SIZE_16, LoadFontEx("../resources/Spectral-SemiBold.ttf", FONT_SIZE_16, nullptr, 0)},
@@ -104,7 +106,8 @@ namespace rendering::gui {
                 .kind(flecs::PreFrame)
                 .each(systems::check_window_resized_system);
 
-        world.system<const Panel, const Rectangle>("Draw Panel")
+        world.system<const TexturedElement, const Rectangle>("Draw Panel")
+                .without<InteractableElement>()
                 .kind<RenderGUI>()
                 .each(systems::draw_panel_system);
 
@@ -112,7 +115,6 @@ namespace rendering::gui {
                 .with<InteractableElementState>(flecs::Wildcard)
                 .kind<RenderGUI>()
                 .each(systems::draw_interactable_textured_element_system);
-
 
         world.system<const Text, const Rectangle, const InteractableElement*, const FontAtlas>("Draw Text")
                 .kind<RenderGUI>()
@@ -156,21 +158,21 @@ namespace rendering::gui {
     void GUIModule::register_entities(flecs::world &world) {
         auto panel_texture = LoadTexture("../resources/panel-010.png");
         auto button_texture = LoadTexture("../resources/panel-009.png");
-        panel_prefab = world.prefab().set<Panel>({
+        world.prefab<prefabs::Panel>().set<TexturedElement>({
             panel_texture,
             {{0, 0, (float) panel_texture.width, (float) panel_texture.height}, 16, 16, 16, 16, NPATCH_NINE_PATCH}
         });
 
-        button_prefab = world.prefab()
+        world.prefab<prefabs::Button>()
                 .set<TexturedElement>({
                     button_texture,
                     {
                         {0, 0, (float) panel_texture.width, (float) panel_texture.height}, 16, 16, 16, 16,
                         NPATCH_NINE_PATCH
-                    }
+                    },
+                    ColorAlpha(WHITE, 0.8)
                 })
                 .set<InteractableElement>({
-                    ColorAlpha(WHITE, 0.8),
                     ColorAlpha(BLACK, 1),
                     ColorAlpha(WHITE, 1)
                 })
@@ -181,12 +183,13 @@ namespace rendering::gui {
                 .add<InteractableElementState>(Normal);
 
 
-        gui_canvas = world.entity("gui_canvas").set<Rectangle>({
+        auto a = world.entity<prefabs::GuiCanvas>(gui_canvas).set<Rectangle>({
             0, 0, static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())
         });
 
+        std::cout << a.type().str() << std::endl;
 
-        menu_bar = world.entity("menu_bar")
+        world.entity(menu_bar)
                 .set<MenuBar>({
                     200,
                     1,

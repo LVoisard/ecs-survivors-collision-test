@@ -16,10 +16,12 @@ namespace debug::systems {
         DrawText(std::string(std::to_string(iter.world().query<physics::Collider>().count()) + " entities").c_str(), 10,
                  30, 20,
                  GREEN);
+        auto q = iter.world().query<rendering::Renderable>();
         DrawText(
-            std::string(std::to_string(rendering::queries::entity_visible_count_query.count()) + " visible entities").
+            std::string(std::to_string(q.count()) + " visible entities").
             c_str(),
             10, 50, 20, GREEN);
+        q.destruct();
     }
 }
 #endif //DEBUG_ENTITY_COUNT_SYSTEM_H

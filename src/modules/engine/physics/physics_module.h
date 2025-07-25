@@ -40,8 +40,8 @@ namespace physics {
     inline flecs::system m_collision_detection_spatial_ecs;
     inline flecs::system m_collision_detection_naive_system;
 
-    inline static std::vector<std::vector<flecs::entity>> collision_method_systems;
-        inline static flecs::entity m_physicsTick;
+    inline std::vector<std::vector<flecs::entity>> collision_method_systems;
+    inline flecs::entity m_physicsTick;
 
     class PhysicsModule : public BaseModule<PhysicsModule> {
         friend class BaseModule<PhysicsModule>;
@@ -49,6 +49,7 @@ namespace physics {
     public:
         // do not add implementation to the constructor
         PhysicsModule(flecs::world &world): BaseModule(world) {
+
         };
 
         ~PhysicsModule();

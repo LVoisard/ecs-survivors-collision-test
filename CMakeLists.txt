@@ -57,15 +57,16 @@ if (NOT flecs_FOUND) # If there's none, fetch and build flecs
     endif ()
 endif ()
 
-
+if (UNIX)
     include(FetchContent)
     FetchContent_Declare(
             perf-cpp-external
             GIT_REPOSITORY "https://github.com/jmuehlig/perf-cpp"
             GIT_TAG "v0.12.2"
     )
-if (UNIX)
+
     FetchContent_MakeAvailable(perf-cpp-external)
+    include_directories(${perf-cpp-external_SOURCE_DIR}/include)
 endif (UNIX)
 
 # Our Project
@@ -89,10 +90,3 @@ endif (UNIX)
 target_link_libraries(${LIBRARY_NAME} PUBLIC
         ${libs}
 )
-
-message(STATUS "CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
-message(STATUS "PLATFORM_ID=$<PLATFORM_ID>")
-message(STATUS "WIN32=${WIN32} UNIX=${UNIX} APPLE=${APPLE}")
-message(STATUS "libs='${libs}'")
-
-

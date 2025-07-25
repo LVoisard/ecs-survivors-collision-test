@@ -8,7 +8,7 @@
 #include <flecs.h>
 #include "modules/engine/physics/components.h"
 #include "modules/gameplay/components.h"
-#include "collision_helper.h"
+#include "../collision_helper.h"
 
 namespace physics::systems {
 

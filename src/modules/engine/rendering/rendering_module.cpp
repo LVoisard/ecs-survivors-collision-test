@@ -23,8 +23,8 @@
 
 
 rendering::RenderingModule::~RenderingModule() {
-    //queries::entity_count_query.destruct();
-    //queries::entity_visible_count_query.destruct();
+    //queries::entity_visible_count_query;
+    //queries::entity_visible_count_query = {};
 }
 void rendering::RenderingModule::register_components(flecs::world world) {
     world.component<Priority>();
@@ -32,8 +32,8 @@ void rendering::RenderingModule::register_components(flecs::world world) {
 
 void rendering::RenderingModule::register_queries(flecs::world world) {
     auto base_query = world.query_builder<Renderable>();
-    queries::entity_count_query = base_query.build();
-    queries::entity_visible_count_query = base_query.with<Visible>().build();
+    ///queries::entity_count_query = base_query.build();
+    //queries::entity_visible_count_query = base_query.with<Visible>().build();
 }
 
 void rendering::RenderingModule::register_systems(flecs::world world) {

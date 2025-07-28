@@ -95,7 +95,7 @@ int main() {
             }
             std::cout << "cache miss ratio: " << std::setprecision(4)
                       << (result["cache-misses"].value() / result["cache-references"].value()) * 100.f << "%" << std::endl;
-            std::cout << "========================== END OF EVENTS ===========================";
+            std::cout << "========================== END OF EVENTS ===========================" << std::endl;
 #endif
         }
     }

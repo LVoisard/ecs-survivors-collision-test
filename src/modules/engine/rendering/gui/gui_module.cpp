@@ -187,7 +187,6 @@ namespace rendering::gui {
             0, 0, static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())
         });
 
-        std::cout << a.type().str() << std::endl;
 
         world.entity(menu_bar)
                 .set<MenuBar>({

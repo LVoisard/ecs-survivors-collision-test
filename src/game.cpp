@@ -275,7 +275,7 @@ void Game::init() {
         gameplay::m_spawner_tick = m_world.timer().interval(gameplay::spawner_interval);
         gameplay::spawn_system.set_tick_source(gameplay::m_spawner_tick);
     });
-    //
+
     player.observe<gameplay::ExpGainedEvent>([exp_bar](gameplay::ExpGainedEvent &event) {
         exp_bar.get_mut<rendering::gui::ProgressBar>().current_val = event.cur;
     });

@@ -21,8 +21,7 @@ namespace physics::systems {
         }
 
         flecs::entity cell = grid.cells[std::make_pair(cell_pos_x, cell_pos_y)];
-        cell.get_mut<GridCell>().entities.push_back(e);
-        //e.add<ContainedIn>(cell);
+        e.add<ContainedIn>(cell);
     }
 }
 #endif //UPDATE_CELL_ENTITIES_SYSTEM_H

@@ -42,8 +42,6 @@ namespace core {
     }
 
     void CoreModule::register_systems(flecs::world &world) {
-        std::cout << "Registering core systems" << std::endl;
-
         world.system<EnabledMenus>()
             .kind(flecs::OnStart)
             .term_at(0).singleton()

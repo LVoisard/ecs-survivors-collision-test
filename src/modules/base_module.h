@@ -17,7 +17,7 @@ template<typename T>
 class BaseModule {
 public:
     BaseModule(flecs::world &world) {
-        std::cout << "Creating Module " << typeid(T).name() << std::endl;
+        //std::cout << "Creating Module " << typeid(T).name() << std::endl;
         // Register the instance
         world.module<T>();
         static_cast<T *>(this)->register_components(world);

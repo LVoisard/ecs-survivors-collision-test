@@ -8,16 +8,17 @@
 #include <raylib.h>
 #include <vector>
 
-#include "modules/engine/physics/components.h"
 #include "modules/engine/core/components.h"
 #include "modules/engine/physics/collision_helper.h"
+#include "modules/engine/physics/components.h"
 
 namespace physics::systems {
     inline void collision_detection_non_static_entity_system(flecs::world world, flecs::iter &self_it, size_t self_id,
                                                              const core::Position2D &pos, const Collider &collider) {
 
         // Build a staged query, and filter
-        auto visible_query = world.query_builder<const core::Position2D, const Collider>().with<rendering::Visible>().filter();
+        auto visible_query =
+                world.query_builder<const core::Position2D, const Collider>().with<rendering::Visible>().filter();
         flecs::entity self = self_it.entity(self_id);
 
         visible_query.each([&](flecs::iter &other_it, size_t other_id, const core::Position2D &other_pos,
@@ -35,15 +36,11 @@ namespace physics::systems {
                                    other_pos.value.y + other_collider.bounds.y, other_collider.bounds.width,
                                    other_collider.bounds.height};
 
-            CollisionInfo a_info;
-            CollisionInfo b_info;
-            if (!collision_handler[collider.type][other_collider.type](self, collider, a_info, other, other_collider,
-                                                                       b_info)) return;
-
-            world.entity().set<CollisionRecord>({self, other});
-
+            if (CheckCollisionRecs(self_rec, other_rec)) {
+                world.entity().set<CollisionRecord>({self, other});
+            }
         });
     }
-}
+} // namespace physics::systems
 
-#endif //COLLISION_DETECTION_CREATE_ENTITY_SYSTEM_H
+#endif // COLLISION_DETECTION_CREATE_ENTITY_SYSTEM_H

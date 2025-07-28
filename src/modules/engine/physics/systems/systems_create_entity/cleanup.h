@@ -10,6 +10,7 @@
 namespace physics::systems {
     inline void collision_cleanup_entity(flecs::iter& it) {
         it.world().delete_with<CollisionRecord>();
+        it.world().remove_all<CollidedWith>(flecs::Wildcard);
     }
 }
 #endif //CLEANUP_ENTITY_H

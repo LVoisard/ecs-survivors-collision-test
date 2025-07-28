@@ -10,6 +10,8 @@
 #include <emscripten/emscripten.h>
 #endif
 
+#include <filesystem>
+#include <fstream>
 #include <thread>
 
 #include "modules/ai/ai_module.h"
@@ -361,12 +363,55 @@ void Game::run() {
 #if defined(EMSCRIPTEN)
     emscripten_set_main_loop_arg(m_world.progress(), this, 0, 1);
 #else
-
+    std::vector<std::chrono::microseconds> delta_times;
+    std::vector<int> frameRates;
+    std::vector<int> entities;
+    int frames = 0;
+    // Main game loop
     // Main game loop
     while (!WindowShouldClose() && !m_world.has<core::ExitConfirmed>()) // Detect window close button or ESC key
     {
-        m_world.progress(GetFrameTime());
+        auto start = std::chrono::high_resolution_clock::now();
+        UpdateDrawFrameDesktop();
+        auto end = std::chrono::high_resolution_clock::now();
+        delta_times.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start));
+        entities.push_back(m_world.query<core::Position2D>().count());
+        frames++;
+
+
+        auto time = 0L;
+        int count = 0;
+        if (frames < 2) {
+            frameRates.push_back(0);
+            continue;
+        }
+        for (int i = 1; i < frames; i++) {
+            time += delta_times[frames - i].count();
+            count++;
+            if (time >= 1000000)
+                break;
+        }
+
+        frameRates.push_back(count / (time / 1000000.0f));
+
+        if (time >= 1000000 && count <= 30) {
+            std::cout << time << std::endl;
+            std::cout << count << std::endl;
+            std::string target = std::format("../../results/{}/{}-{}.png", m_windowName, m_windowName, rep);
+            std::string name = std::format("{}-{}.png", m_windowName, rep);
+            TakeScreenshot(name.c_str());
+            try {
+                if (std::filesystem::exists(target))
+                    std::filesystem::remove(target);
+                std::filesystem::copy(name, target);
+                std::filesystem::remove(name);
+            } catch (std::exception &e) {
+                std::cout << "couldn't write png" << e.what() << std::endl;
+            }
+            break;
+        }
     }
+    // q.destruct();
     m_world.quit();
     m_world.progress();
 #endif
@@ -375,26 +420,36 @@ void Game::run() {
     CloseWindow(); // Close window and OpenGL context
     physics::PhysicsModule::reset_systems_list();
     //--------------------------------------------------------------------------------------
-    for (auto module: modules ) {
+    for (auto module: modules) {
         module.destruct();
     }
     modules.clear();
     std::cout << "inner reset: refcount = " << flecs_poly_refcount(m_world) << std::endl;
+    m_world.reset();
     try {
-        m_world.reset();
+        //--------------------------------------------------------------------------------------
+        if (std::ofstream file(std::format("../../results/{}/{}-{}.txt", m_windowName, m_windowName, rep)); file.is_open()) {
+            file << "frame" << "," << "nb of entities" << "," << "fps" << "," << "frame length" << "\n";
+            for (int i = 0; i < frames; i++) {
+                file << i << "," << entities[i] << "," << frameRates[i] << "," << delta_times[i].count() << "\n";
+            }
+            file.close();
+        } else {
+            printf("Failed to open file %s\n",
+                   std::format("../../results/{}/{}-{}.txt", m_windowName, m_windowName, rep).c_str());
+        }
     }
-    catch (const std::exception& e) {
-        std::cout << "caught error" << std::endl;
+    catch(std::exception& e) {
+        std::cout << "could not write results" << e.what() << std::endl;
     }
 }
 void Game::set_collision_strategy(physics::PHYSICS_COLLISION_STRATEGY strategy) {
     physics::PhysicsModule::set_collision_strategy(strategy);
 }
 
-void Game::UpdateDrawFrameDesktop() { // m_world.progress(GetFrameTime());
-}
+void Game::UpdateDrawFrameDesktop() { m_world.progress(GetFrameTime()); }
 
 void Game::UpdateDrawFrameWeb(void *game) {
-    // Game *instance = static_cast<Game *>(game);
-    // instance->m_world.progress(GetFrameTime());
+    Game *instance = static_cast<Game *>(game);
+    instance->m_world.progress(GetFrameTime());
 }

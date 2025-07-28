@@ -44,7 +44,6 @@ namespace physics::systems {
 
                             if ((collider.collision_filter & other_collider.collision_type) == none) return;
 
-
                             collisions.push_back({self, other});
                         });
                     });

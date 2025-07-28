@@ -15,7 +15,7 @@ public:
     Game(const char* windowName, int windowWidth, int windowHeight);
     void run();
     void init();
-
+    void set_rep(int rep) {this->rep = rep;}
     void set_collision_strategy(physics::PHYSICS_COLLISION_STRATEGY strategy);
 
 private:
@@ -29,6 +29,7 @@ private:
     std::string m_windowName;
     int m_windowHeight;
     int m_windowWidth;
+    int rep;
 };
 
 

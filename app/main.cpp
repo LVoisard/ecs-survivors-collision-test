@@ -4,6 +4,7 @@
 #include <perfcpp/event_counter.h>
 #endif
 #include <flecs.h>
+#include <fstream>
 struct NonFragmentingCollidedWith {};
 struct Collider {};
 struct RemoveAfterFrame {};
@@ -75,27 +76,45 @@ int main() {
     };
     for (int i = 0; i < 1; i++) {
         for (int strategy = 0; strategy < 6; strategy++) {
+
+            if (strategy == 1) continue;
+
 #ifdef __linux__
             const auto counter_def = perf::CounterDefinition();
             auto event_counter = perf::EventCounter{counter_def};
-            event_counter.add({"seconds", "instructions", "cycles", "cache-misses", "cache-references"});
+            event_counter.add({"seconds", "instructions", "cycles", "cache-misses", "cache-references", "cache-hit-ratio"});
             event_counter.start();
 #endif
             Game game = Game(titles[strategy].c_str(), screenWidth, screenHeight);
             game.init();
             game.set_collision_strategy(static_cast<physics::PHYSICS_COLLISION_STRATEGY>(strategy));
+            game.set_rep(i);
             game.run();
 #ifdef __linux__
             event_counter.stop();
 
             std::cout << "============================== EVENTS ==============================" << std::endl;
             const auto result = event_counter.result();
+            std::cout << result.to_csv() << std::endl;
             for (const auto [event_name, value]: result) {
                 std::cout << event_name << ": " << std::setprecision(16) << value << std::endl;
             }
             std::cout << "cache miss ratio: " << std::setprecision(4)
                       << (result["cache-misses"].value() / result["cache-references"].value()) * 100.f << "%" << std::endl;
             std::cout << "========================== END OF EVENTS ===========================" << std::endl;
+
+
+            try {
+                if (std::ofstream file(std::format("../../results/{}/perf-{}-{}.txt", titles[strategy], titles[strategy], i)); file.is_open()) {
+                    file << result.to_csv() << std::endl;
+                    file.close();
+                } else {
+                    printf("Failed to open file %s\n",
+                           std::format("../../results/{}/{}-{}.txt",titles[strategy], titles[strategy], i).c_str());
+                }
+            }catch(std::exception& e) {
+                std::cout << "could not write results" << e.what() << std::endl;
+            }
 #endif
         }
     }

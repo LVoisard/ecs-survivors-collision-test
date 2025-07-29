@@ -24,14 +24,12 @@ namespace physics::systems {
                             for (int i = 0; i < cell.entities.size(); i++) {
                                 flecs::entity self = cell.entities[i];
                                 if (!self.is_alive()) continue;
-                                const core::Position2D pos = cell.entities[i].get<core::Position2D>();
                                 const Collider collider = cell.entities[i].get<Collider>();
                                 for (int j = 0; j < neighbour.entities.size(); j++) {
                                     flecs::entity other = neighbour.entities[j];
                                     if (!other.is_alive()) continue;
                                     if (self.id() <= other.id()) continue;
 
-                                    const core::Position2D other_pos = neighbour.entities[j].get<core::Position2D>();
                                     const Collider other_collider = neighbour.entities[j].get<Collider>();
                                     if ((collider.collision_filter & other_collider.collision_type) == none) continue;
 

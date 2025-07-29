@@ -6,6 +6,9 @@
 #include <iostream>
 #include <ostream>
 
+
+#include <perfcpp/event_counter.h>
+
 #if defined(EMSCRIPTEN)
 #include <emscripten/emscripten.h>
 #endif
@@ -61,7 +64,7 @@ void Game::init() {
     // use the flecs explorer when not on browser
     m_world.import <flecs::stats>();
     m_world.set<flecs::Rest>({});
-    m_world.set_threads(static_cast<int>(std::thread::hardware_concurrency()));
+    //m_world.set_threads(static_cast<int>(std::thread::hardware_concurrency()));
 #endif
     physics::PhysicsModule::reset_systems_list();
     modules.push_back(m_world.import <core::CoreModule>());
@@ -366,17 +369,40 @@ void Game::run() {
     std::vector<std::chrono::microseconds> delta_times;
     std::vector<int> frameRates;
     std::vector<int> entities;
+    std::vector<double> cache_refs;
+    std::vector<double> cache_miss;
     int frames = 0;
     // Main game loop
     // Main game loop
+#ifdef __linux__
+
+    const auto counter_definition = perf::CounterDefinition{};
+    auto event_counter = perf::EventCounter{ counter_definition };
+    event_counter.add({"cache-references", "cache-misses", "cache-miss-ratio"});
+    event_counter.add_live(std::vector<std::string>{ "cache-references", "cache-misses"});
+
+    auto live_events = perf::LiveEventCounter{ event_counter };
+#endif
+    try {
+        event_counter.start();
+    } catch (std::runtime_error& exception) {
+        std::cerr << exception.what() << std::endl;
+        return;
+    }
+
     while (!WindowShouldClose() && !m_world.has<core::ExitConfirmed>()) // Detect window close button or ESC key
     {
         auto start = std::chrono::high_resolution_clock::now();
+live_events.start();
         UpdateDrawFrameDesktop();
+live_events.stop();
         auto end = std::chrono::high_resolution_clock::now();
         delta_times.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start));
+        cache_refs.push_back(live_events.get("cache-references"));
+        cache_miss.push_back(live_events.get("cache-misses"));
         entities.push_back(m_world.query<core::Position2D>().count());
         frames++;
+        // std::cout << live_events.get("cache-references") << " cache references, " <<  live_events.get("cache-misses") << " cache-misses, " << live_events.get("cache-misses") / live_events.get("cache-references") << " cache-miss-ratio" << std::endl;
 
 
         auto time = 0L;
@@ -411,7 +437,8 @@ void Game::run() {
             break;
         }
     }
-    // q.destruct();
+    event_counter.stop();
+    std::cout << event_counter.result().to_string() << std::endl;
     m_world.quit();
     m_world.progress();
 #endif
@@ -429,9 +456,9 @@ void Game::run() {
     try {
         //--------------------------------------------------------------------------------------
         if (std::ofstream file(std::format("../../results/{}/{}-{}.txt", m_windowName, m_windowName, rep)); file.is_open()) {
-            file << "frame" << "," << "nb of entities" << "," << "fps" << "," << "frame length" << "\n";
+            file << "frame" << "," << "nb of entities" << "," << "fps" << "," << "frame length" << "," << "cache-references" << "," << "cache-misses" << "," << "cache-miss-ratio" << "\n";
             for (int i = 0; i < frames; i++) {
-                file << i << "," << entities[i] << "," << frameRates[i] << "," << delta_times[i].count() << "\n";
+                file << i << "," << entities[i] << "," << frameRates[i] << "," << delta_times[i] << "," << cache_refs[i] << "," << cache_miss[i] << "," <<  cache_miss[i] / cache_refs[i] << "\n";
             }
             file.close();
         } else {

@@ -43,6 +43,7 @@
 #include "systems/systems_spatial_hashing/update_grid_system.h"
 
 #include "systems/systems_spatial_hashing_relationship/collision_detection_relationship_spatial_hashing_system.h"
+#include "systems/systems_spatial_hashing_relationship/update_cell_entities_relationship_system.h"
 
 namespace physics {
 
@@ -194,7 +195,7 @@ namespace physics {
                         .singleton()
                         .without<StaticCollider>()
                         .kind<UpdateBodies>()
-                        .each(systems::update_cell_entities_system));
+                        .each(systems::update_cell_entities_relationship_system));
 #pragma endregion
 
 #pragma region "Collision Dectection"
@@ -218,13 +219,6 @@ namespace physics {
                         .tick_source(m_physicsTick)
                         .each(systems::collision_detection_non_static_relationship_system));
 
-        collision_method_systems[COLLISION_RELATIONSHIP].push_back(
-                world.system("Resolve Collisions ECS (Relationship)")
-                        .with<CollidedWith>(flecs::Wildcard)
-                        .kind<Resolution>()
-                        .immediate()
-                        .tick_source(m_physicsTick)
-                        .each(systems::collision_resolution_relationship_system));
 
         collision_method_systems[COLLISION_RELATIONSHIP_DONTFRAGMENT].push_back(
                 world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship non-frag)")
@@ -272,6 +266,14 @@ namespace physics {
 
 #pragma endregion
 #pragma region "Resolution"
+        collision_method_systems[COLLISION_RELATIONSHIP].push_back(
+        world.system("Resolve Collisions ECS (Relationship)")
+                .with<CollidedWith>(flecs::Wildcard)
+                .kind<Resolution>()
+                .immediate()
+                .tick_source(m_physicsTick)
+                .each(systems::collision_resolution_relationship_system));
+
         collision_method_systems[COLLISION_RELATIONSHIP_DONTFRAGMENT].push_back(
                 world.system("Resolve Collisions ECS (Relationship non-frag)")
                         .with<NonFragmentingCollidedWith>(flecs::Wildcard)
@@ -287,15 +289,6 @@ namespace physics {
                         .immediate()
                         .tick_source(m_physicsTick)
                         .each(systems::collision_resolution_entity_system));
-
-        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
-                world.system<CollisionRecordList>("Collision Resolution ECS (spatial hash relationship)")
-                        .term_at(0)
-                        .singleton()
-                        .kind<Resolution>()
-                        .tick_source(m_physicsTick)
-                        .each(systems::collision_resolution_rec_list_system));
-
         collision_method_systems[RECORD_LIST].push_back(
                 world.system<CollisionRecordList>("Collision Resolution ECS (Naive Record List) 1")
                         .term_at(0)
@@ -311,6 +304,18 @@ namespace physics {
                         .kind<Resolution>()
                         .tick_source(m_physicsTick)
                         .each(systems::collision_resolution_rec_list_system));
+
+        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
+                world.system<CollisionRecordList>("Collision Resolution ECS (spatial hash relationship)")
+                        .term_at(0)
+                        .singleton()
+                        .kind<Resolution>()
+                        .tick_source(m_physicsTick)
+                        .each(systems::collision_resolution_rec_list_system));
+
+
+
+
 #pragma endregion
 
 #pragma region "collision event"
@@ -388,6 +393,6 @@ namespace physics {
         world.component<UpdateBodies>().add(flecs::Phase).depends_on(flecs::OnUpdate);
         world.component<Detection>().add(flecs::Phase).depends_on(flecs::OnValidate);
         world.component<Resolution>().add(flecs::Phase).depends_on(flecs::PostUpdate); // to use from external modules
-        world.component<CollisionCleanup>().add(flecs::Phase).depends_on<Resolution>();
+        world.component<CollisionCleanup>().add(flecs::Phase).depends_on(flecs::PreStore);
     }
 } // namespace physics

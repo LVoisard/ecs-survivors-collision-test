@@ -9,7 +9,7 @@
 #include <flecs.h>
 
 namespace gameplay {
-    const float BASE_SPAWNER_INTERVAL = 0.33f;
+    const float BASE_SPAWNER_INTERVAL = 0.01f;
     inline float spawner_interval = BASE_SPAWNER_INTERVAL;
     inline flecs::system add_multiproj;
     inline flecs::system remove_multiproj;

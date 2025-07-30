@@ -199,11 +199,10 @@ namespace physics {
 #pragma endregion
 
 #pragma region "Collision Dectection"
-        m_collision_detection_naive_system = world.system<CollisionRecordList, const core::Position2D, const Collider>(
+        m_collision_detection_naive_system = world.system<CollisionRecordList>(
                                                           "Detect Collisions ECS (Naive Record List) non-static")
                                                      .term_at(0)
                                                      .singleton()
-                                                     .with<rendering::Visible>()
                                                      .kind<Detection>()
                                                      .multi_threaded()
                                                      .tick_source(m_physicsTick)

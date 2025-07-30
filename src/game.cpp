@@ -6,8 +6,9 @@
 #include <iostream>
 #include <ostream>
 
-
+#ifdef __linux__
 #include <perfcpp/event_counter.h>
+#endif
 
 #if defined(EMSCRIPTEN)
 #include <emscripten/emscripten.h>
@@ -369,8 +370,10 @@ void Game::run() {
     std::vector<std::chrono::microseconds> delta_times;
     std::vector<int> frameRates;
     std::vector<int> entities;
+#ifdef __linux__ 
     std::vector<double> cache_refs;
     std::vector<double> cache_miss;
+#endif
     int frames = 0;
     // Main game loop
     // Main game loop
@@ -382,24 +385,31 @@ void Game::run() {
     event_counter.add_live(std::vector<std::string>{ "cache-references", "cache-misses"});
 
     auto live_events = perf::LiveEventCounter{ event_counter };
-#endif
+
     try {
         event_counter.start();
     } catch (std::runtime_error& exception) {
         std::cerr << exception.what() << std::endl;
         return;
     }
-
+#endif
     while (!WindowShouldClose() && !m_world.has<core::ExitConfirmed>()) // Detect window close button or ESC key
     {
         auto start = std::chrono::high_resolution_clock::now();
+        #ifdef __linux__
 live_events.start();
+#endif
         UpdateDrawFrameDesktop();
-live_events.stop();
+#ifdef __linux__ 
+       
+        live_events.stop();
+#endif
         auto end = std::chrono::high_resolution_clock::now();
         delta_times.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start));
+#ifdef __linux__ 
         cache_refs.push_back(live_events.get("cache-references"));
         cache_miss.push_back(live_events.get("cache-misses"));
+#endif
         entities.push_back(m_world.query<core::Position2D>().count());
         frames++;
         // std::cout << live_events.get("cache-references") << " cache references, " <<  live_events.get("cache-misses") << " cache-misses, " << live_events.get("cache-misses") / live_events.get("cache-references") << " cache-miss-ratio" << std::endl;
@@ -437,11 +447,14 @@ live_events.stop();
             break;
         }
     }
+#ifdef __linux__ 
     event_counter.stop();
     std::cout << event_counter.result().to_string() << std::endl;
+#endif
+
     m_world.quit();
     m_world.progress();
-#endif
+
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow(); // Close window and OpenGL context
@@ -453,6 +466,7 @@ live_events.stop();
     modules.clear();
     std::cout << "inner reset: refcount = " << flecs_poly_refcount(m_world) << std::endl;
     m_world.reset();
+    #ifdef __linux__
     try {
         //--------------------------------------------------------------------------------------
         if (std::ofstream file(std::format("../../results/{}/{}-{}.txt", m_windowName, m_windowName, rep)); file.is_open()) {
@@ -469,6 +483,8 @@ live_events.stop();
     catch(std::exception& e) {
         std::cout << "could not write results" << e.what() << std::endl;
     }
+#endif 
+#endif
 }
 void Game::set_collision_strategy(physics::PHYSICS_COLLISION_STRATEGY strategy) {
     physics::PhysicsModule::set_collision_strategy(strategy);

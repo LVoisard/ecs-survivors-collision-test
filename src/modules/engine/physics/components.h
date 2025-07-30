@@ -60,6 +60,7 @@ namespace physics {
     };
 
     struct CollisionInfo {
+        Vector2 overlap;
         Vector2 normal;
         Vector2 contact_point;
     };
@@ -67,6 +68,8 @@ namespace physics {
     struct CollisionRecord {
         flecs::entity a;
         flecs::entity b;
+        CollisionInfo info_a;
+        CollisionInfo info_b;
     };
 
     struct SignificantCollisionRecord {

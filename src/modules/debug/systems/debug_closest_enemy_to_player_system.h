@@ -15,7 +15,7 @@
 namespace debug::systems {
     inline void debug_closest_enemy_to_player_system(flecs::iter &iter) {
         auto player = iter.world().lookup("player");
-        auto pos = player.get<core::Position2D>();
+        auto pos = *(player.get<core::Position2D>());
         float shortest_distance_sqr = 10000000;
         core::Position2D target_pos{pos.value};
         core::queries::position_and_tag_query.each([&](const core::Position2D &other_pos, const core::Tag &tag) {

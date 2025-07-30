@@ -18,8 +18,8 @@ namespace physics::systems {
         flecs::entity a = it.entity(i);
         flecs::entity b = it.pair(0).second(); // Colliding entity
 
-        const Collider a_col = a.get<Collider>();
-        const Collider b_col = b.get<Collider>();
+        const Collider a_col = *(a.get<Collider>());
+        const Collider b_col = *(b.get<Collider>());
 
         // are the entities colliding?
         CollisionInfo a_info;

@@ -15,9 +15,9 @@ namespace rendering::gui::systems {
         if (!e.has<Anchor>()) return;
         if (!e.has<Rectangle>()) return;
 
-        auto anchor = e.get<Anchor>();
+        auto anchor = *(e.get<Anchor>());
 
-        Rectangle temp{e.get<Rectangle>()};
+        Rectangle temp{*(e.get<Rectangle>())};
         switch (anchor.horizontal_anchor) {
             case CENTER:
                 temp.x = anchor.position.x + parent.x + parent.width / 2;

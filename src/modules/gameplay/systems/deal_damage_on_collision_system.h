@@ -16,7 +16,7 @@ namespace gameplay::systems {
         if (!other.has<Health>()) return;
         float value = dmg.value;
         if (other.has<TakeDamage>()) {
-            value += other.get<TakeDamage>().damage;
+            value += other.get<TakeDamage>()->damage;
         }
         other.set<TakeDamage>({value});
     }

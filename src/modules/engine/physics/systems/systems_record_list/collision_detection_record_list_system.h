@@ -10,6 +10,7 @@
 #include <vector>
 #include "modules/engine/physics/components.h"
 #include "modules/engine/core/components.h"
+#include "../../collision_helper.h"
 
 namespace physics::systems {
     inline void collision_detection_non_static_record_list_system(flecs::iter &it, size_t id, CollisionRecordList &list) {
@@ -36,7 +37,14 @@ namespace physics::systems {
                     return;
 
                 // get ready for next step
-                list.records.push_back({self, other});
+                CollisionInfo a;
+                CollisionInfo b;
+                if (collision_handler[collider.type][other_collider.type](self, collider, a, other, collider, b)) {
+                    if ((collider.collision_type & other_collider.collision_type) == none &&
+                        (collider.collision_type | other_collider.collision_type) != (enemy | environment)) {
+                        list.records.push_back({self, other, a, b});
+                    }
+                }
             });
         });
 

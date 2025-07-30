@@ -10,11 +10,13 @@
 #include "modules/gameplay/components.h"
 
 namespace gameplay::systems {
-    inline void create_health_bar_system(flecs::entity e, const gameplay::Health health) {
-        e.add<HealthBar>();
-        e.child()
+    inline void create_health_bar_system(flecs::iter &it, size_t i, const gameplay::Health health) {
+        it.entity(i).add<HealthBar>();
+        it.world()
+                .entity()
+                .child_of(it.entity(i))
                 .set<Rectangle>({0, 0, 50, 10})
                 .set<rendering::ProgressBar>({0, health.max, health.value});
     }
-}
-#endif //CREATE_HEALTH_BAR_SYSTEM_H
+} // namespace gameplay::systems
+#endif // CREATE_HEALTH_BAR_SYSTEM_H

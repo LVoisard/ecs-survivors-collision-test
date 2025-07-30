@@ -19,18 +19,18 @@ namespace physics::systems {
                             int y = cell.y + offset_y;
                             if (!grid.cells.contains(std::make_pair(x, y))) continue;
 
-                            const GridCell neighbour = grid.cells[std::make_pair(x, y)].get<GridCell>();
+                            const GridCell neighbour = *(grid.cells[std::make_pair(x, y)].get<GridCell>());
 
                             for (int i = 0; i < cell.entities.size(); i++) {
                                 flecs::entity self = cell.entities[i];
                                 if (!self.is_alive()) continue;
-                                const Collider collider = cell.entities[i].get<Collider>();
+                                const Collider collider = *(cell.entities[i].get<Collider>());
                                 for (int j = 0; j < neighbour.entities.size(); j++) {
                                     flecs::entity other = neighbour.entities[j];
                                     if (!other.is_alive()) continue;
                                     if (self.id() <= other.id()) continue;
 
-                                    const Collider other_collider = neighbour.entities[j].get<Collider>();
+                                    const Collider other_collider = *(neighbour.entities[j].get<Collider>());
                                     if ((collider.collision_filter & other_collider.collision_type) == none) continue;
 
                                     collisions.push_back({self, other});

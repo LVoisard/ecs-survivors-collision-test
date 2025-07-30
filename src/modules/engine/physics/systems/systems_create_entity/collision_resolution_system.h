@@ -18,14 +18,11 @@ namespace physics::systems {
         flecs::entity a = rec.a;
         flecs::entity b = rec.b; // Colliding entity
 
-        const Collider a_col = a.get<Collider>();
-        const Collider b_col = b.get<Collider>();
+        const Collider a_col = *(a.get<Collider>());
+        const Collider b_col = *(b.get<Collider>());
 
         // are the entities colliding?
-        CollisionInfo a_info;
-        CollisionInfo b_info;
-        if (!collision_handler[a_col.type][b_col.type](a, a_col, a_info, b, b_col, b_info))
-            return;
+        correct_positions(a, a_col, a_info, )
 
         // if the entities are of different types (player & enemy) we report it a significant collision
         // enemy vs environment should not be significant. (too many tables)

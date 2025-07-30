@@ -76,7 +76,8 @@ namespace physics {
         world.component<Velocity2D>();
         world.component<AccelerationSpeed>();
         world.component<CollidedWith>();
-        world.component<NonFragmentingCollidedWith>().add(flecs::DontFragment);
+        world.component<NonFragmentingCollidedWith>();
+        //.add(flecs::DontFragment);
         world.component<ContainedIn>().add(flecs::Exclusive);
     }
 

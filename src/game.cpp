@@ -212,7 +212,8 @@ void Game::init() {
                               .add<core::PauseOnEnabled>()
                               .disable();
 
-    pause_menu.child()
+    m_world.entity()
+            .child_of(pause_menu)
             .set<Rectangle>({-150, 5, 300, 50})
             .set<rendering::gui::Anchor>({rendering::gui::CENTER, rendering::gui::TOP})
             .set<rendering::gui::Text>({"Paused", rendering::gui::FONT_SIZE_48, TEXT_ALIGN_CENTER,
@@ -220,7 +221,8 @@ void Game::init() {
             .disable();
 
     flecs::entity resume_btn =
-            pause_menu.child()
+            m_world.entity()
+                    .child_of(pause_menu)
                     .is_a<rendering::gui::prefabs::Button>()
                     .set<Rectangle>({-125, -135, 250, 50})
                     .set<rendering::gui::Anchor>(
@@ -228,11 +230,12 @@ void Game::init() {
                     .set<rendering::gui::ButtonCallback>({[pause_menu] { pause_menu.add<core::Close>(); }})
                     .disable();
 
-    resume_btn.get_mut<rendering::gui::Text>().text = "Resume Game";
+    resume_btn.get_mut<rendering::gui::Text>()->text = "Resume Game";
 
 #ifndef EMSCRIPTEN
     flecs::entity close_btn =
-            pause_menu.child()
+            m_world.entity()
+                    .child_of(pause_menu)
                     .is_a<rendering::gui::prefabs::Button>()
                     .set<Rectangle>({-125, -75, 250, 50})
                     .set<rendering::gui::Anchor>(
@@ -240,14 +243,14 @@ void Game::init() {
                     .set<rendering::gui::ButtonCallback>({[&] { m_world.add<core::ExitConfirmed>(); }})
                     .disable();
 
-    close_btn.get_mut<rendering::gui::Text>().text = "Close Game";
+    close_btn.get_mut<rendering::gui::Text>()->text = "Close Game";
 #else
     resume_btn.set<Rectangle>({-125, -75, 250, 50});
 #endif
 
 
-    auto input_toggle = pause_menu.child().add<input::InputToggleEnable>();
-    input_toggle.child().set<input::KeyBinding>({KEY_ESCAPE, 0});
+    auto input_toggle = m_world.entity().child_of(pause_menu).add<input::InputToggleEnable>();
+    m_world.entity().child_of(input_toggle).set<input::KeyBinding>({KEY_ESCAPE, 0});
 
     auto level_up_menu = m_world.entity("level_up_menu")
                                  .child_of(rendering::gui::get_gui_canvas(m_world))
@@ -269,13 +272,13 @@ void Game::init() {
     level_up_menu.disable();
 
     player.observe<gameplay::LevelUpEvent>([exp_bar, exp_level_txt, level_up_menu](gameplay::LevelUpEvent &event) {
-        exp_bar.get_mut<rendering::gui::ProgressBar>().max_val = event.threshold;
-        exp_level_txt.get_mut<rendering::gui::Text>().text = "Level: " + std::to_string(event.level);
+        exp_bar.get_mut<rendering::gui::ProgressBar>()->max_val = event.threshold;
+        exp_level_txt.get_mut<rendering::gui::Text>()->text = "Level: " + std::to_string(event.level);
         level_up_menu.add<core::Open>();
     });
 
     player.observe<gameplay::LevelUpEvent>([&, spawner](gameplay::LevelUpEvent &event) {
-        spawner.get_mut<gameplay::Spawner>().difficulty = event.level;
+        spawner.get_mut<gameplay::Spawner>()->difficulty = event.level;
         gameplay::spawner_interval = std::max(0.0167f, gameplay::BASE_SPAWNER_INTERVAL - 2 * (event.level / 100.f));
         gameplay::m_spawner_tick.destruct();
         gameplay::m_spawner_tick = m_world.timer().interval(gameplay::spawner_interval);
@@ -283,7 +286,7 @@ void Game::init() {
     });
 
     player.observe<gameplay::ExpGainedEvent>([exp_bar](gameplay::ExpGainedEvent &event) {
-        exp_bar.get_mut<rendering::gui::ProgressBar>().current_val = event.cur;
+        exp_bar.get_mut<rendering::gui::ProgressBar>()->current_val = event.cur;
     });
 
     auto container = m_world.entity()
@@ -293,7 +296,8 @@ void Game::init() {
                              .set<rendering::gui::Anchor>({rendering::gui::CENTER, rendering::gui::MIDDLE})
                              .set<rendering::gui::Outline>({1, GRAY, Fade(WHITE, 0)});
 
-    container.child()
+    m_world.entity()
+            .child_of(container)
             .is_a<rendering::gui::prefabs::Button>()
             .set_name("Option 1")
             .set<Rectangle>({-162.5, 5, 325, 40})
@@ -305,7 +309,8 @@ void Game::init() {
                 level_up_menu.add<core::Close>();
             }});
 
-    container.child()
+    m_world.entity()
+            .child_of(container)
             .is_a<rendering::gui::prefabs::Button>()
             .set_name("Option 2")
             .set<Rectangle>({-162.5, 50, 325, 40})
@@ -317,7 +322,8 @@ void Game::init() {
                 level_up_menu.add<core::Close>();
             }});
 
-    container.child()
+    m_world.entity()
+            .child_of(container)
             .is_a<rendering::gui::prefabs::Button>()
             .set_name("Option 3")
             .set<Rectangle>({-162.5, 95, 325, 40})
@@ -329,7 +335,8 @@ void Game::init() {
                 level_up_menu.add<core::Close>();
             }});
 
-    container.child()
+    m_world.entity()
+            .child_of(container)
             .is_a<rendering::gui::prefabs::Button>()
             .set_name("Option 4")
             .set<Rectangle>({-162.5, 140, 325, 40})
@@ -342,7 +349,8 @@ void Game::init() {
             }});
 
     flecs::entity split_level_up =
-            container.child()
+            m_world.entity()
+                    .child_of(container)
                     .is_a<rendering::gui::prefabs::Button>()
                     .set_name("Option 5")
                     .set<Rectangle>({-162.5, 185, 325, 40})

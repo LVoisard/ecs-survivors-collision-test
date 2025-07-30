@@ -9,14 +9,14 @@
 
 namespace gameplay::systems {
     inline void give_experience_system(GiveExperience &exp) {
-        if (Experience *player_exp = exp.other.try_get_mut<Experience>(); player_exp) {
+        if (Experience *player_exp = exp.other.get_mut<Experience>(); player_exp) {
             player_exp->value += exp.value;
             if (player_exp->value >= player_exp->threshold) {
                 //level up
                 player_exp->level++;
                 player_exp->value -= player_exp->threshold;
                 player_exp->threshold = player_exp->threshold * 1.2f;
-                if(auto hp = exp.other.try_get_mut<Health>()) {
+                if(auto hp = exp.other.get_mut<Health>()) {
                     hp->value = hp->max;
                 }
                 exp.other.emit<LevelUpEvent>({player_exp->level, player_exp->threshold});

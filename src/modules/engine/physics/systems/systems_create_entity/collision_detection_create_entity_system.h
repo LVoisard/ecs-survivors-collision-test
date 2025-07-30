@@ -30,14 +30,12 @@ namespace physics::systems {
             if ((collider.collision_filter & other_collider.collision_type) == none)
                 return;
 
-            Rectangle self_rec = {pos.value.x + collider.bounds.x, pos.value.y + collider.bounds.y,
-                                  collider.bounds.width, collider.bounds.height};
-            Rectangle other_rec = {other_pos.value.x + other_collider.bounds.x,
-                                   other_pos.value.y + other_collider.bounds.y, other_collider.bounds.width,
-                                   other_collider.bounds.height};
+            CollisionInfo a_info;
+            CollisionInfo b_info;
 
-            if (CheckCollisionRecs(self_rec, other_rec)) {
-                world.entity().set<CollisionRecord>({self, other});
+            if (collision_handler[collider.type][other_collider.type](self, collider, a_info, other, other_collider,
+                                                                        b_info)) {
+                world.entity().set<CollisionRecord>({self, other, a_info, b_info});
             }
         });
     }

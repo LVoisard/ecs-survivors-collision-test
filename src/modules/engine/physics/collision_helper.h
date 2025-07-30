@@ -6,10 +6,10 @@
 #define COLLISION_HELPER_H
 
 #include <flecs.h>
-#include <raylib.h>
-#include <raymath.h>
 #include <functional>
 #include <mutex>
+#include <raylib.h>
+#include <raymath.h>
 
 #include "components.h"
 #include "modules/engine/core/components.h"
@@ -17,84 +17,99 @@
 
 namespace physics {
     static std::mutex list_mutex;
-    static Vector2 collide_circles(const CircleCollider &a, const core::Position2D &a_pos, CollisionInfo& a_info,
-                                       const CircleCollider &b, const core::Position2D &b_pos, CollisionInfo& b_info) {
-            float combinedRadius = a.radius + b.radius;
+    static bool collide_circles(const CircleCollider &a, const core::Position2D &a_pos, CollisionInfo &a_info,
+                                const CircleCollider &b, const core::Position2D &b_pos, CollisionInfo &b_info) {
 
-            // Find the distance and adjust to resolve the overlap
-            Vector2 direction = b_pos.value - a_pos.value;
-            Vector2 moveDirection = Vector2Normalize(direction);
-            float overlap = combinedRadius - Vector2Length(direction);
+        float combinedRadius = a.radius + b.radius;
 
-            a_info.normal = Vector2Negate(moveDirection);
-            b_info.normal = moveDirection;
+        if (Vector2LengthSqr(b_pos.value - a_pos.value ) > combinedRadius * combinedRadius) {
+            return false;
+        }
+        // Find the distance and adjust to resolve the overlap
+        Vector2 direction = b_pos.value - a_pos.value;
+        Vector2 move_direction = Vector2Normalize(direction);
+        float overlap_length = combinedRadius - Vector2Length(direction);
 
-            return moveDirection * overlap;
+
+        a_info.normal = Vector2Negate(move_direction);
+        b_info.normal = move_direction;
+
+        a_info.overlap = a_info.normal * overlap_length;
+        b_info.overlap = b_info.normal * overlap_length;
+
+        return true;
+    }
+
+    static bool collide_circle_rec(const CircleCollider &a, const core::Position2D &a_pos, CollisionInfo &a_info,
+                                   const Collider &b, const core::Position2D &b_pos, CollisionInfo &b_info) {
+        float recCenterX = b_pos.value.x + b.bounds.x + b.bounds.width / 2.0f;
+        float recCenterY = b_pos.value.y + b.bounds.y + b.bounds.height / 2.0f;
+
+        float halfWidth = b.bounds.width / 2.0f;
+        float halfHeight = b.bounds.height / 2.0f;
+
+        float dx = a_pos.value.x - recCenterX;
+        float dy = a_pos.value.y - recCenterY;
+
+        float absDx = fabsf(dx);
+        float absDy = fabsf(dy);
+
+        Vector2 overlap = {0, 0};
+
+        if (absDx > (halfWidth + a.radius))
+            return false;
+        if (absDy > (halfHeight + a.radius))
+            return false;
+
+        if (absDx <= halfWidth || absDy <= halfHeight) {
+            // Side collision — resolve with axis-aligned MTV
+            float overlapX = (halfWidth + a.radius) - absDx;
+            float overlapY = (halfHeight + a.radius) - absDy;
+
+
+            if (overlapX < overlapY) {
+                overlap.x = dx < 0 ? overlapX : -overlapX;
+            } else {
+                overlap.y = dy < 0 ? overlapY : -overlapY;
+            }
+            a_info.normal = Vector2Normalize(Vector2Negate(overlap));
+            b_info.normal = Vector2Normalize(overlap);
+
+            a_info.overlap = Vector2Negate(overlap);
+            b_info.overlap = overlap;
+            return true;
         }
 
-        static Vector2 collide_circle_rec(const CircleCollider &a, core::Position2D &a_pos, CollisionInfo& a_info,
-                                          const Collider &b, core::Position2D &b_pos, CollisionInfo& b_info) {
-            float recCenterX = b_pos.value.x + b.bounds.x + b.bounds.width / 2.0f;
-            float recCenterY = b_pos.value.y + b.bounds.y + b.bounds.height / 2.0f;
+        // Corner collision
+        float cornerDx = absDx - halfWidth;
+        float cornerDy = absDy - halfHeight;
 
-            float halfWidth = b.bounds.width / 2.0f;
-            float halfHeight = b.bounds.height / 2.0f;
+        float cornerDistSq = cornerDx * cornerDx + cornerDy * cornerDy;
+        float radius = a.radius;
 
-            float dx = a_pos.value.x - recCenterX;
-            float dy = a_pos.value.y - recCenterY;
+        if (cornerDistSq < radius * radius) {
+            float dist = sqrtf(cornerDistSq);
 
-            float absDx = fabsf(dx);
-            float absDy = fabsf(dy);
+            if (dist == 0.0f)
+                dist = 0.01f; // Avoid divide by zero
 
-            Vector2 overlap = {0, 0};
+            float overlap_length = radius - dist;
+            float nx = cornerDx / dist;
+            float ny = cornerDy / dist;
 
-            if (absDx > (halfWidth + a.radius)) return overlap;
-            if (absDy > (halfHeight + a.radius)) return overlap;
+            overlap = {nx * overlap_length * ((dx < 0) ? 1.0f : -1.0f),
+                       ny * overlap_length * ((dy < 0) ? 1.0f : -1.0f)};
 
-            if (absDx <= halfWidth || absDy <= halfHeight) {
-                // Side collision — resolve with axis-aligned MTV
-                float overlapX = (halfWidth + a.radius) - absDx;
-                float overlapY = (halfHeight + a.radius) - absDy;
+            a_info.normal = Vector2Normalize(Vector2Negate(overlap));
+            b_info.normal = Vector2Normalize(overlap);
 
-
-                if (overlapX < overlapY) {
-                    overlap.x = dx < 0 ? overlapX : -overlapX;
-                } else {
-                    overlap.y = dy < 0 ? overlapY : -overlapY;
-                }
-                a_info.normal = Vector2Normalize(Vector2Negate(overlap));
-                b_info.normal = Vector2Normalize(overlap);
-                return overlap;
-            }
-
-            // Corner collision
-            float cornerDx = absDx - halfWidth;
-            float cornerDy = absDy - halfHeight;
-
-            float cornerDistSq = cornerDx * cornerDx + cornerDy * cornerDy;
-            float radius = a.radius;
-
-            if (cornerDistSq < radius * radius) {
-                float dist = sqrtf(cornerDistSq);
-
-                if (dist == 0.0f) dist = 0.01f; // Avoid divide by zero
-
-                float overlap_length = radius - dist;
-                float nx = cornerDx / dist;
-                float ny = cornerDy / dist;
-
-                overlap = {
-                    nx * overlap_length * ((dx < 0) ? 1.0f : -1.0f),
-                    ny * overlap_length * ((dy < 0) ? 1.0f : -1.0f)
-                };
-
-                a_info.normal = Vector2Normalize(Vector2Negate(overlap));
-                b_info.normal = Vector2Normalize(overlap);
-            }
-
-            return overlap;
+            a_info.overlap = Vector2Negate(overlap);
+            b_info.overlap = overlap;
+            return true;
         }
-        /**
+        return false;
+    }
+    /**
      * Correct the positions of the entity (if they are not static nor "triggers") by the overlap amount
      * @param a entity 1
      * @param a_col entity 1 mutable position
@@ -103,9 +118,9 @@ namespace physics {
      * @param overlap amount of overlap of the two entities
      */
     static void correct_positions(flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
-                                  const Collider &b_col, CollisionInfo &b_info, Vector2 overlap) {
-        const core::Position2D& a_pos = a.get<core::Position2D>();
-        const core::Position2D& b_pos = b.get<core::Position2D>();
+                                  const Collider &b_col, CollisionInfo &b_info) {
+        const core::Position2D &a_pos = a.get<core::Position2D>();
+        const core::Position2D &b_pos = b.get<core::Position2D>();
 
         float a_move_ratio = 0.5f;
         float b_move_ratio = 0.5f;
@@ -124,8 +139,35 @@ namespace physics {
             b_move_ratio = 0.0f;
         }
 
-        a.set<core::Position2D>({a_pos.value - overlap * a_move_ratio * 0.75});
-        b.set<core::Position2D>({b_pos.value + overlap * b_move_ratio * 0.75});
+        a.get_mut<core::Position2D>() = {a_pos.value + a_info.overlap * a_move_ratio * 0.75};
+        b.get_mut<core::Position2D>() = {b_pos.value + b_info.overlap * b_move_ratio * 0.75};
+    }
+    /**
+     * Correct the positions of the entity (if they are not static nor "triggers") by the overlap amount
+     * @param a entity 1
+     * @param a_col entity 1 mutable position
+     * @param b entity 2
+     * @param b_col entity 2 mutable position
+     * @param overlap amount of overlap of the two entities
+     */
+    static void correct_position(flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, const Collider &b_col,
+                                 Vector2 overlap) {
+        const core::Position2D &a_pos = a.get<core::Position2D>();
+
+        float a_move_ratio = 0.5f;
+
+        if (a_col.static_body) {
+            a_move_ratio = 0;
+        }
+        if (b_col.static_body) {
+            a_move_ratio = 1.0f;
+        }
+
+        if ((!a_col.correct_position && !a_col.static_body) || (!b_col.correct_position && !b_col.static_body)) {
+            a_move_ratio = 0.0f;
+        }
+
+        a.get_mut<core::Position2D>().value -= overlap * a_move_ratio;
     }
 
     /**
@@ -138,26 +180,13 @@ namespace physics {
      */
     static bool handle_circle_circle(flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
                                      const Collider &b_col, CollisionInfo &b_info) {
-        Vector2 a_pos = a.get<core::Position2D>().value;
-        Vector2 b_pos = b.get<core::Position2D>().value;
+        const core::Position2D a_pos = a.get<core::Position2D>();
+        const core::Position2D b_pos = b.get<core::Position2D>();
 
         const CircleCollider col = a.get<CircleCollider>();
         const CircleCollider other_col = b.get<CircleCollider>();
 
-        if (!CheckCollisionCircles(a_pos, col.radius, b_pos, other_col.radius)) {
-            return false;
-        }
-
-        Vector2 overlap = collide_circles(col, a.get<core::Position2D>(), a_info, other_col,
-                                                         b.get<core::Position2D>(), b_info);
-
-        correct_positions(a, a_col, a_info, b, b_col, b_info, overlap);
-
-        Vector2 contact_point = a_pos + b_info.normal * col.radius;
-        a_info.contact_point = contact_point;
-        b_info.contact_point = contact_point;
-
-        return true;
+        return collide_circles(col, a_pos, a_info, other_col, b_pos, b_info);
     }
 
     /**
@@ -170,28 +199,11 @@ namespace physics {
      */
     static bool handle_circle_rec_collision(flecs::entity &a, const Collider &a_col, CollisionInfo &a_info,
                                             flecs::entity &b, const Collider &b_col, CollisionInfo &b_info) {
-        Vector2 a_pos = a.get<core::Position2D>().value;
-        Vector2 b_pos = b.get<core::Position2D>().value;
+        const core::Position2D a_pos = a.get<core::Position2D>();
+        const core::Position2D b_pos = b.get<core::Position2D>();
         const CircleCollider circle_col = a.get<CircleCollider>();
-        if (!CheckCollisionCircleRec(
-            a_pos, circle_col.radius, {
-                b_pos.x + b_col.bounds.x, b_pos.y + b_col.bounds.y, b_col.bounds.width,
-                b_col.bounds.height
-            })) {
-            return false;
-        }
 
-        Vector2 overlap = collide_circle_rec(
-            circle_col, a.get_mut<core::Position2D>(), a_info,
-            b_col, b.get_mut<core::Position2D>(), b_info);
-
-        correct_positions(a, a_col, a_info, b, b_col, b_info, overlap);
-
-        Vector2 contact_point = a_pos + b_info.normal * circle_col.radius;
-        a_info.contact_point = contact_point;
-        b_info.contact_point = contact_point;
-
-        return true;
+        return collide_circle_rec(circle_col, a_pos, a_info, b_col, b_pos, b_info);
     }
 
     /**
@@ -206,19 +218,10 @@ namespace physics {
                                        const Collider &b_col) {
         Vector2 a_pos = a.get<core::Position2D>().value;
         Vector2 b_pos = b.get<core::Position2D>().value;
-        if (!CheckCollisionRecs(
-            {
-                a_pos.x + a_col.bounds.x, a_pos.y + a_col.bounds.y, a_col.bounds.width,
-                a_col.bounds.height
-            }, {
-                b_pos.x + b_col.bounds.x, b_pos.y + b_col.bounds.y, b_col.bounds.width,
-                b_col.bounds.height
-            })) {
-            return false;
-        }
-
-        // TODO need to figure overlap for boxes and update the positions properly
-        return true;
+        // TODO need to figure overlap for boxes
+        return CheckCollisionRecs(
+                    {a_pos.x + a_col.bounds.x, a_pos.y + a_col.bounds.y, a_col.bounds.width, a_col.bounds.height},
+                    {b_pos.x + b_col.bounds.x, b_pos.y + b_col.bounds.y, b_col.bounds.width, b_col.bounds.height});
     }
 
     using CollisionHandler = std::function<bool(flecs::entity &, const Collider &, CollisionInfo &, flecs::entity &,
@@ -228,33 +231,31 @@ namespace physics {
      * Map for collision type handling, we point to the correct position in the array with the Collider type enum
      */
     static CollisionHandler collision_handler[ColliderType::SIZE][ColliderType::SIZE] = {
-        // Circle = 0
-        {
-            // Circle vs Circle
-            [](flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
-               const Collider &b_col, CollisionInfo &b_info) {
-                return handle_circle_circle(a, a_col, a_info, b, b_col, b_info);
+            // Circle = 0
+            {
+                    // Circle vs Circle
+                    [](flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
+                       const Collider &b_col,
+                       CollisionInfo &b_info) { return handle_circle_circle(a, a_col, a_info, b, b_col, b_info); },
+                    // Circle vs Box
+                    [](flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
+                       const Collider &b_col, CollisionInfo &b_info) {
+                        return handle_circle_rec_collision(a, a_col, a_info, b, b_col, b_info);
+                    },
             },
-            // Circle vs Box
-            [](flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
-               const Collider &b_col, CollisionInfo &b_info) {
-                return handle_circle_rec_collision(a, a_col, a_info, b, b_col, b_info);
-            },
-        },
-        // Box = 1
-        {
-            // Box vs Circle
-            [](flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
-               const Collider &b_col, CollisionInfo &b_info) {
-                return handle_circle_rec_collision(b, b_col, b_info, a, a_col, a_info);
-            },
-            // Box vs Box
-            [](flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
-               const Collider &b_col, CollisionInfo &b_info) {
-                return handle_boxes_collision(a, a_col, b, b_col);
-            },
-        }
-        // more collisions
+            // Box = 1
+            {
+                    // Box vs Circle
+                    [](flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
+                       const Collider &b_col, CollisionInfo &b_info) {
+                        return handle_circle_rec_collision(b, b_col, b_info, a, a_col, a_info);
+                    },
+                    // Box vs Box
+                    [](flecs::entity &a, const Collider &a_col, CollisionInfo &a_info, flecs::entity &b,
+                       const Collider &b_col,
+                       CollisionInfo &b_info) { return handle_boxes_collision(a, a_col, b, b_col); },
+            }
+            // more collisions
     };
-}
-#endif //COLLISION_HELPER_H
+} // namespace physics
+#endif // COLLISION_HELPER_H

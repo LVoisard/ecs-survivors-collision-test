@@ -37,12 +37,8 @@ namespace physics::systems {
 
             CollisionInfo a_info;
             CollisionInfo b_info;
-            if (!collision_handler[collider.type][other_collider.type](self, collider, a_info, other, other_collider,
-                                                                       b_info))
-                return;
-
-            if ((collider.collision_type & other_collider.collision_type) == none &&
-                (collider.collision_type | other_collider.collision_type) != (enemy | environment)) {
+            if (collision_handler[collider.type][other_collider.type](self, collider, a_info, other, other_collider,
+                                                                       b_info)) {
                 self.add<NonFragmentingCollidedWith>(other);
                 other.add<NonFragmentingCollidedWith>(self);
             }

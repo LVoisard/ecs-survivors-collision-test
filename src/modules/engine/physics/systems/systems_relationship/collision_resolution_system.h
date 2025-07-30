@@ -22,12 +22,6 @@ namespace physics::systems {
         const Collider b_col = b.get<Collider>();
 
         // are the entities colliding?
-        CollisionInfo a_info;
-        CollisionInfo b_info;
-        if (!collision_handler[a_col.type][b_col.type](a, a_col, a_info, b, b_col, b_info)) {
-            a.remove<CollidedWith>(b);
-            b.remove<CollidedWith>(a);
-        }
 
         if (!((a_col.collision_type & b_col.collision_type) == none &&
               (a_col.collision_type | b_col.collision_type) != (enemy | environment))) {

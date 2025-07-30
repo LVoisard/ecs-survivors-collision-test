@@ -6,7 +6,7 @@
 #define COLLISION_RESOLUTION_SYSTEM_H
 
 #include <flecs.h>
-#include "../collision_helper.h"
+#include "../../collision_helper.h"
 #include "modules/engine/physics/components.h"
 #include "modules/gameplay/components.h"
 
@@ -19,19 +19,22 @@ namespace physics::systems {
             flecs::entity a = record.a; // Current entity
             flecs::entity b = record.b; // Colliding entity
 
-            const Collider a_col = a.get<Collider>();
-            const Collider b_col = b.get<Collider>();
+            const Collider* a_col = a.get<Collider>();
+            const Collider* b_col = b.get<Collider>();
+
+            // are the entities colliding?
+            
 
             // if the entities are of different types (player & enemy) we report it a significant collision
             // enemy vs environment should not be significant. (too many tables)
             // But player vs environment should count (because of projectiles, they might have behaviours specific to
             // obstacles)
 
-            correct_positions(record.a, a_col, record.a_info, record.b, b_col, record.b_info);
+            collide_circles
 
-            if ((a_col.collision_type & b_col.collision_type) == none &&
-                (a_col.collision_type | b_col.collision_type) != (enemy | environment)) {
-                    rec.significant_collisions.push_back({a, b, record.a_info, record.b_info});
+            if ((a_col->collision_type & b_col->collision_type) == none &&
+                (a_col->collision_type | b_col->collision_type) != (enemy | environment)) {
+                rec.significant_collisions.push_back({a, b, record.info_a, b_info});
             }
         }
     }

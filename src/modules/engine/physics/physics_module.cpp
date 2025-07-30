@@ -199,16 +199,7 @@ namespace physics {
 #pragma endregion
 
 #pragma region "Collision Dectection"
-        m_collision_detection_naive_system = world.system<CollisionRecordList>(
-                                                          "Detect Collisions ECS (Naive Record List) non-static")
-                                                     .term_at(0)
-                                                     .singleton()
-                                                     .kind<Detection>()
-                                                     .multi_threaded()
-                                                     .tick_source(m_physicsTick)
-                                                     .each(systems::collision_detection_non_static_record_list_system);
-        m_collision_detection_naive_system.disable();
-        collision_method_systems[RECORD_LIST].push_back(m_collision_detection_naive_system);
+
 
         collision_method_systems[COLLISION_RELATIONSHIP].push_back(
                 world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship)")
@@ -236,6 +227,18 @@ namespace physics {
                         .each([world](flecs::iter &it, size_t i, const core::Position2D &pos, const Collider &col) {
                             systems::collision_detection_non_static_entity_system(world, it, i, pos, col);
                         }));
+
+        m_collision_detection_naive_system = world.system<CollisionRecordList>(
+                                                          "Detect Collisions ECS (Naive Record List) non-static")
+                                                     .term_at(0)
+                                                     .singleton()
+                                                     .kind<Detection>()
+                                                     .multi_threaded()
+                                                     .tick_source(m_physicsTick)
+                                                     .each(systems::collision_detection_non_static_record_list_system);
+        m_collision_detection_naive_system.disable();
+        collision_method_systems[RECORD_LIST].push_back(m_collision_detection_naive_system);
+
         m_collision_detection_spatial_hashing_system =
                 world.system<CollisionRecordList, SpatialHashingGrid, GridCell>(
                              "Detect Collisions ECS non-static with spatial hashing")

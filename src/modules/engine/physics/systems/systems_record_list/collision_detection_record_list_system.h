@@ -8,11 +8,12 @@
 #include <flecs.h>
 #include <mutex>
 #include <vector>
-#include "modules/engine/physics/components.h"
 #include "modules/engine/core/components.h"
+#include "modules/engine/physics/components.h"
 
 namespace physics::systems {
-    inline void collision_detection_non_static_record_list_system(flecs::iter &it, size_t id, CollisionRecordList &list) {
+    inline void collision_detection_non_static_record_list_system(flecs::iter &it, size_t id,
+                                                                  CollisionRecordList &list) {
         std::vector<CollisionRecord> collisions;
         std::vector<CollisionRecord> events;
         flecs::world stage_world = it.world();
@@ -22,29 +23,33 @@ namespace physics::systems {
                 stage_world.query_builder<const core::Position2D, const Collider>().with<rendering::Visible>().filter();
         auto visible_query_1 =
                 stage_world.query_builder<const core::Position2D, const Collider>().with<rendering::Visible>().filter();
-        visible_query_1.each([&](flecs::iter &self_it, size_t self_id, const core::Position2D &other_pos,
-                                 const Collider &collider) {
-            flecs::entity self = self_it.entity(self_id);
+        visible_query_1.each(
+                [&](flecs::iter &self_it, size_t self_id, const core::Position2D &other_pos, const Collider &collider) {
+                    flecs::entity self = self_it.entity(self_id);
 
-            visible_query.each([&](flecs::iter &other_it, size_t other_id, const core::Position2D &other_pos,
-                                   const Collider &other_collider) {
-                flecs::entity other = other_it.entity(other_id);
-                if (other.id() <= self.id())
-                    return;
+                    visible_query.each([&](flecs::iter &other_it, size_t other_id, const core::Position2D &other_pos,
+                                           const Collider &other_collider) {
+                        flecs::entity other = other_it.entity(other_id);
+                        if (other.id() <= self.id())
+                            return;
 
-                if ((collider.collision_filter & other_collider.collision_type) == none)
-                    return;
+                        if ((collider.collision_filter & other_collider.collision_type) == none)
+                            return;
 
-                // get ready for next step
-                list.records.push_back({self, other});
-            });
-        });
+                        CollisionInfo a_info;
+                        CollisionInfo b_info;
+                        if (collision_handler[collider.type][other_collider.type](self, collider, a_info, other,
+                                                                                  other_collider, b_info)) {
+                            list.records.push_back({self, other, a_info, b_info});
+                        }
+                    });
+                });
 
 
         // not ideal, there is a bit of loss of time because of the lock
-        //list_mutex.lock();
-        //list.records.insert(list.records.end(), collisions.begin(), collisions.end());
-        //list_mutex.unlock();
+        // list_mutex.lock();
+        // list.records.insert(list.records.end(), collisions.begin(), collisions.end());
+        // list_mutex.unlock();
     }
-}
-#endif //COLLISION_DETECTION_RECORD_LIST_SYSTEM_H
+} // namespace physics::systems
+#endif // COLLISION_DETECTION_RECORD_LIST_SYSTEM_H

@@ -33,7 +33,11 @@ namespace physics::systems {
                                     const Collider other_collider = neighbour.entities[j].get<Collider>();
                                     if ((collider.collision_filter & other_collider.collision_type) == none) continue;
 
-                                    collisions.push_back({self, other});
+                                    CollisionInfo a_info, b_info;
+                                    if (collision_handler[collider.type][other_collider.type](self, collider, a_info, other, other_collider,
+                                                                        b_info)) {
+                                        collisions.push_back({self, other, a_info, b_info});
+                                    }
 
                                 }
                             }

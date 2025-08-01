@@ -472,7 +472,7 @@ live_events.start();
         if (std::ofstream file(std::format("../../results/{}/{}-{}.txt", m_windowName, m_windowName, rep)); file.is_open()) {
             file << "frame" << "," << "nb of entities" << "," << "fps" << "," << "frame length" << "," << "cache-references" << "," << "cache-misses" << "," << "cache-miss-ratio" << "\n";
             for (int i = 0; i < frames; i++) {
-                file << i << "," << entities[i] << "," << frameRates[i] << "," << delta_times[i] << "," << cache_refs[i] << "," << cache_miss[i] << "," <<  cache_miss[i] / cache_refs[i] << "\n";
+                file << i << "," << entities[i] << "," << frameRates[i] << "," << delta_times[i].count() << "," << cache_refs[i] << "," << cache_miss[i] << "," <<  cache_miss[i] / cache_refs[i] << "\n";
             }
             file.close();
         } else {

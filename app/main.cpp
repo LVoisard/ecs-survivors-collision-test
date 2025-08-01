@@ -5,10 +5,17 @@
 #endif
 #include <flecs.h>
 #include <fstream>
-struct NonFragmentingCollidedWith {};
-struct Collider {};
-struct RemoveAfterFrame {};
+#include <perfcpp/event_counter.h>
+#include <linux/perf_event.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 int main() {
+
+
 #ifdef EMSCRIPTEN
     const int screenWidth = 1920;
     const int screenHeight = 1080;

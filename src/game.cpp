@@ -5,9 +5,10 @@
 #include "game.h"
 #include <iostream>
 #include <ostream>
-
 #ifdef __linux__
+#include <perfcpp/hardware_info.h>
 #include <perfcpp/event_counter.h>
+#include <perfcpp/config.h>
 #endif
 
 #if defined(EMSCRIPTEN)
@@ -379,16 +380,25 @@ void Game::run() {
     // Main game loop
 #ifdef __linux__
 
+    auto config = perf::Config{};
+    config.max_groups(12U);             /// Only two hardware counters
+    config.max_counters_per_group(1U); /// Only one event per counter.
     const auto counter_definition = perf::CounterDefinition{};
-    auto event_counter = perf::EventCounter{ counter_definition };
-    event_counter.add({"cache-references", "cache-misses", "cache-miss-ratio"});
-    event_counter.add_live(std::vector<std::string>{ "cache-references", "cache-misses"});
+    auto event_counter = perf::EventCounter{ counter_definition, config };
+    try {
+        event_counter.add(std::vector<std::string>{"cpu_core/cache-references","cpu_core/cache-misses"});
+        event_counter.add_live(std::vector<std::string>{"cache-references", "cache-misses" });
+
+    } catch (std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+    }
 
     auto live_events = perf::LiveEventCounter{ event_counter };
 
     try {
         event_counter.start();
     } catch (std::runtime_error& exception) {
+        std::cout << "wtf" << std::endl;
         std::cerr << exception.what() << std::endl;
         return;
     }
@@ -397,7 +407,7 @@ void Game::run() {
     {
         auto start = std::chrono::high_resolution_clock::now();
         #ifdef __linux__
-live_events.start();
+    live_events.start();
 #endif
         UpdateDrawFrameDesktop();
 #ifdef __linux__ 
@@ -406,7 +416,7 @@ live_events.start();
 #endif
         auto end = std::chrono::high_resolution_clock::now();
         delta_times.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start));
-#ifdef __linux__ 
+#ifdef __linux__
         cache_refs.push_back(live_events.get("cache-references"));
         cache_miss.push_back(live_events.get("cache-misses"));
 #endif
@@ -431,19 +441,19 @@ live_events.start();
         frameRates.push_back(count / (time / 1000000.0f));
 
         if (time >= 1000000 && count <= 30) {
-            std::cout << time << std::endl;
-            std::cout << count << std::endl;
-            std::string target = std::format("../../results/{}/{}-{}.png", m_windowName, m_windowName, rep);
-            std::string name = std::format("{}-{}.png", m_windowName, rep);
-            TakeScreenshot(name.c_str());
-            try {
-                if (std::filesystem::exists(target))
-                    std::filesystem::remove(target);
-                std::filesystem::copy(name, target);
-                std::filesystem::remove(name);
-            } catch (std::exception &e) {
-                std::cout << "couldn't write png" << e.what() << std::endl;
-            }
+            //std::cout << time << std::endl;
+            //std::cout << count << std::endl;
+            //std::string target = std::format("../../results/{}/{}-{}.png", m_windowName, m_windowName, rep);
+            //std::string name = std::format("{}-{}.png", m_windowName, rep);
+            //TakeScreenshot(name.c_str());
+            //try {
+            //    if (std::filesystem::exists(target))
+            //        std::filesystem::remove(target);
+            //    std::filesystem::copy(name, target);
+            //    std::filesystem::remove(name);
+            //} catch (std::exception &e) {
+            //    std::cout << "couldn't write png" << e.what() << std::endl;
+            //}
             break;
         }
     }
@@ -468,21 +478,23 @@ live_events.start();
     m_world.reset();
     #ifdef __linux__
     try {
-        //--------------------------------------------------------------------------------------
-        if (std::ofstream file(std::format("../../results/{}/{}-{}.txt", m_windowName, m_windowName, rep)); file.is_open()) {
-            file << "frame" << "," << "nb of entities" << "," << "fps" << "," << "frame length" << "," << "cache-references" << "," << "cache-misses" << "," << "cache-miss-ratio" << "\n";
-            for (int i = 0; i < frames; i++) {
-                file << i << "," << entities[i] << "," << frameRates[i] << "," << delta_times[i].count() << "," << cache_refs[i] << "," << cache_miss[i] << "," <<  cache_miss[i] / cache_refs[i] << "\n";
-            }
-            file.close();
-        } else {
-            printf("Failed to open file %s\n",
-                   std::format("../../results/{}/{}-{}.txt", m_windowName, m_windowName, rep).c_str());
+    //--------------------------------------------------------------------------------------
+    std::stringstream filename_stream;
+    filename_stream << "../../results/" << m_windowName << "/" << m_windowName << "-" << rep << ".txt";
+        //std::cout << event_counter.result().to_string() << std::endl;
+    if (std::ofstream file(filename_stream.str()); file.is_open()) {
+        file << "frame" << "," << "nb of entities" << "," << "fps" << "," << "frame length" << "," << "cache-references" << "," << "cache-misses" << "," << "cache-miss-ratio" << "\n";
+        for (int i = 0; i < frames; i++) {
+            file << i << "," << entities[i] << "," << frameRates[i] << "," << delta_times[i].count() << "," << cache_refs[i] << "," << cache_miss[i] << "," << cache_miss[i] / cache_refs[i] << "\n";
         }
+        file.close();
+    } else {
+        printf("Failed to open file %s\n", filename_stream.str().c_str());
     }
-    catch(std::exception& e) {
-        std::cout << "could not write results" << e.what() << std::endl;
-    }
+}
+catch(std::exception& e) {
+    std::cout << "could not write results" << e.what() << std::endl;
+}
 #endif 
 #endif
 }

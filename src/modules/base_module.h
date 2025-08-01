@@ -6,7 +6,6 @@
 // ReSharper disable CppHiddenFunction
 #ifndef MODULE_H
 #define MODULE_H
-#include <format>
 #include <iostream>
 #include <ostream>
 #include <unordered_map>

@@ -5,10 +5,12 @@
 #include "game.h"
 #include <iostream>
 #include <ostream>
+
+#include "perf_recorder.h"
 #ifdef __linux__
-#include <perfcpp/hardware_info.h>
-#include <perfcpp/event_counter.h>
 #include <perfcpp/config.h>
+#include <perfcpp/event_counter.h>
+#include <perfcpp/hardware_info.h>
 #endif
 
 #if defined(EMSCRIPTEN)
@@ -66,7 +68,7 @@ void Game::init() {
     // use the flecs explorer when not on browser
     m_world.import <flecs::stats>();
     m_world.set<flecs::Rest>({});
-    //m_world.set_threads(static_cast<int>(std::thread::hardware_concurrency()));
+    // m_world.set_threads(static_cast<int>(std::thread::hardware_concurrency()));
 #endif
     physics::PhysicsModule::reset_systems_list();
     modules.push_back(m_world.import <core::CoreModule>());
@@ -371,96 +373,48 @@ void Game::run() {
     std::vector<std::chrono::microseconds> delta_times;
     std::vector<int> frameRates;
     std::vector<int> entities;
-#ifdef __linux__ 
+#ifdef __linux__
     std::vector<double> cache_refs;
     std::vector<double> cache_miss;
 #endif
     int frames = 0;
     // Main game loop
-    // Main game loop
 #ifdef __linux__
 
     auto config = perf::Config{};
-    config.max_groups(12U);             /// Only two hardware counters
+    config.max_groups(12U); /// Only two hardware counters
     config.max_counters_per_group(1U); /// Only one event per counter.
-    const auto counter_definition = perf::CounterDefinition{};
-    auto event_counter = perf::EventCounter{ counter_definition, config };
-    try {
-        event_counter.add(std::vector<std::string>{"cpu_core/cache-references","cpu_core/cache-misses"});
-        event_counter.add_live(std::vector<std::string>{"cache-references", "cache-misses" });
+    PerfRecorder recorder{config, perf::CounterDefinition{}};
 
-    } catch (std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
-    }
-
-    auto live_events = perf::LiveEventCounter{ event_counter };
-
-    try {
-        event_counter.start();
-    } catch (std::runtime_error& exception) {
-        std::cout << "wtf" << std::endl;
-        std::cerr << exception.what() << std::endl;
-        return;
-    }
+    recorder.init();
+    recorder.start_recording();
 #endif
     while (!WindowShouldClose() && !m_world.has<core::ExitConfirmed>()) // Detect window close button or ESC key
     {
-        auto start = std::chrono::high_resolution_clock::now();
-        #ifdef __linux__
-    live_events.start();
+        frames++;
+#ifdef __linux__
+        //recorder.start_live_recording();
 #endif
         UpdateDrawFrameDesktop();
-#ifdef __linux__ 
-       
-        live_events.stop();
-#endif
-        auto end = std::chrono::high_resolution_clock::now();
-        delta_times.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start));
 #ifdef __linux__
-        cache_refs.push_back(live_events.get("cache-references"));
-        cache_miss.push_back(live_events.get("cache-misses"));
-#endif
-        entities.push_back(m_world.query<core::Position2D>().count());
-        frames++;
-        // std::cout << live_events.get("cache-references") << " cache references, " <<  live_events.get("cache-misses") << " cache-misses, " << live_events.get("cache-misses") / live_events.get("cache-references") << " cache-miss-ratio" << std::endl;
 
-
-        auto time = 0L;
-        int count = 0;
-        if (frames < 2) {
-            frameRates.push_back(0);
-            continue;
-        }
-        for (int i = 1; i < frames; i++) {
-            time += delta_times[frames - i].count();
-            count++;
-            if (time >= 1000000)
-                break;
-        }
-
-        frameRates.push_back(count / (time / 1000000.0f));
-
-        if (time >= 1000000 && count <= 30) {
-            //std::cout << time << std::endl;
-            //std::cout << count << std::endl;
-            //std::string target = std::format("../../results/{}/{}-{}.png", m_windowName, m_windowName, rep);
-            //std::string name = std::format("{}-{}.png", m_windowName, rep);
-            //TakeScreenshot(name.c_str());
-            //try {
-            //    if (std::filesystem::exists(target))
-            //        std::filesystem::remove(target);
-            //    std::filesystem::copy(name, target);
-            //    std::filesystem::remove(name);
-            //} catch (std::exception &e) {
-            //    std::cout << "couldn't write png" << e.what() << std::endl;
-            //}
+        //recorder.stop_live_recording(m_world);
+        if (frames > 30 && GetFPS() <= 30) {
+            std::cout << "fps dropped below 30" << frames << "," << GetFPS() << std::endl;
             break;
         }
-    }
-#ifdef __linux__ 
-    event_counter.stop();
-    std::cout << event_counter.result().to_string() << std::endl;
 #endif
+    }
+#ifdef __linux__
+    recorder.stop_recording();
+    recorder.close();
+    std::stringstream filepath_stream;
+    filepath_stream << "../../results/" << m_windowName << "/" ;
+    std::stringstream filename_stream;
+    filename_stream << m_windowName << "-" << rep << ".txt";
+    recorder.dump_data(filepath_stream.str(), filename_stream.str());
+#endif
+
 
     m_world.quit();
     m_world.progress();
@@ -473,38 +427,22 @@ void Game::run() {
     for (auto module: modules) {
         module.destruct();
     }
+    recorder.close();
     modules.clear();
     std::cout << "inner reset: refcount = " << flecs_poly_refcount(m_world) << std::endl;
     m_world.reset();
-    #ifdef __linux__
-    try {
-    //--------------------------------------------------------------------------------------
-    std::stringstream filename_stream;
-    filename_stream << "../../results/" << m_windowName << "/" << m_windowName << "-" << rep << ".txt";
-        //std::cout << event_counter.result().to_string() << std::endl;
-    if (std::ofstream file(filename_stream.str()); file.is_open()) {
-        file << "frame" << "," << "nb of entities" << "," << "fps" << "," << "frame length" << "," << "cache-references" << "," << "cache-misses" << "," << "cache-miss-ratio" << "\n";
-        for (int i = 0; i < frames; i++) {
-            file << i << "," << entities[i] << "," << frameRates[i] << "," << delta_times[i].count() << "," << cache_refs[i] << "," << cache_miss[i] << "," << cache_miss[i] / cache_refs[i] << "\n";
-        }
-        file.close();
-    } else {
-        printf("Failed to open file %s\n", filename_stream.str().c_str());
-    }
+    frames = 0;
 }
-catch(std::exception& e) {
-    std::cout << "could not write results" << e.what() << std::endl;
-}
-#endif 
+
 #endif
-}
-void Game::set_collision_strategy(physics::PHYSICS_COLLISION_STRATEGY strategy) {
-    physics::PhysicsModule::set_collision_strategy(strategy);
-}
 
-void Game::UpdateDrawFrameDesktop() { m_world.progress(GetFrameTime()); }
+    void Game::set_collision_strategy(physics::PHYSICS_COLLISION_STRATEGY strategy) {
+        physics::PhysicsModule::set_collision_strategy(strategy);
+    }
 
-void Game::UpdateDrawFrameWeb(void *game) {
-    Game *instance = static_cast<Game *>(game);
-    instance->m_world.progress(GetFrameTime());
-}
+    void Game::UpdateDrawFrameDesktop() { m_world.progress(GetFrameTime()); }
+
+    void Game::UpdateDrawFrameWeb(void *game) {
+        Game *instance = static_cast<Game *>(game);
+        instance->m_world.progress(GetFrameTime());
+    }

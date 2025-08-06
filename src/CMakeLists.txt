@@ -2,6 +2,8 @@ set(LIBRARY_SOURCES
         "game.cpp")
 set(LIBRARY_HEADERS
         "game.h"
+        ../perf_recorder.cpp
+        perf_recorder.h
 )
 set(LIBRARY_INCLUDES
         "./")

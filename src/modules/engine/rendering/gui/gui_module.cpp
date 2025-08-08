@@ -194,7 +194,7 @@ namespace rendering::gui {
                     1,
                     GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)),
                     GetColor(GuiGetStyle(BUTTON, BACKGROUND_COLOR)),
-                });
+                }).disable();
 
 
     }

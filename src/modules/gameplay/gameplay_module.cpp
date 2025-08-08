@@ -62,26 +62,26 @@ namespace gameplay {
         m_spawner_tick = world.timer().interval(spawner_interval);
 
         spawn_system = world.system<const Spawner, const core::GameSettings, const rendering::TrackingCamera>("Spawn Enemies")
-                .tick_source(m_spawner_tick)
+                //.tick_source(m_spawner_tick)
                 .term_at(1).singleton()
                 .term_at(2).singleton()
                 .each(systems::spawn_enemies_around_screen_system);
 
-        world.system<Cooldown>("Update Cooldown")
-                .without<CooldownCompleted>()
-                .each(systems::update_cooldown_system);
-
-        world.observer("Restart Cooldown")
-                .with<CooldownCompleted>()
-                .event(flecs::OnRemove)
-                .each(systems::restart_cooldown_system);
-
-        world.system<core::Position2D, Attack, core::Speed, MultiProj *>("Fire Projectile")
-                .with<Projectile>()
-                .with<CooldownCompleted>()
-                .write<CooldownCompleted>()
-                .term_at(0).parent()
-                .each(systems::fire_projectile_system);
+        // world.system<Cooldown>("Update Cooldown")
+        //         .without<CooldownCompleted>()
+        //         .each(systems::update_cooldown_system);
+        //
+        // world.observer("Restart Cooldown")
+        //         .with<CooldownCompleted>()
+        //         .event(flecs::OnRemove)
+        //         .each(systems::restart_cooldown_system);
+        //
+        // world.system<core::Position2D, Attack, core::Speed, MultiProj *>("Fire Projectile")
+        //         .with<Projectile>()
+        //         .with<CooldownCompleted>()
+        //         .write<CooldownCompleted>()
+        //         .term_at(0).parent()
+        //         .each(systems::fire_projectile_system);
 
         // world.system("delete if hit wall and no bounce")
         //         .with<physics::CollidedWith>(flecs::Wildcard)
@@ -134,51 +134,51 @@ namespace gameplay {
         //         .immediate()
         //         .each(systems::projectile_split_collision_system);
 
-        world.system<Damage>("collision detected, deal damage to target")
-                .with<physics::CollidedWith>(flecs::Wildcard)
-                .immediate()
-                .kind<OnCollisionDetected>()
-                .tick_source(physics::m_physicsTick)
-                .each(systems::deal_damage_on_collision_system);
-
-        world.system<Damage>("collision detected, deal damage to target (non-frag)")
-                .with<physics::NonFragmentingCollidedWith>(flecs::Wildcard)
-                .immediate()
-                .kind<OnCollisionDetected>()
-                .tick_source(physics::m_physicsTick)
-                .each(systems::deal_damage_on_collision_system);
-
-        world.system<const Health>("create health bar")
-                .with<TakeDamage>()
-                .without<HealthBar>()
-                .without<rendering::ProgressBar>()
-                .kind<PostCollisionDetected>()
-                .each(systems::create_health_bar_system);
-
-        world.system<Health, TakeDamage>("take damage")
-                .kind<PostCollisionDetected>()
-                .each(systems::take_damage_system);
-
-        world.system<const Health>("check if dead")
-                .kind<PostCollisionDetected>()
-                .immediate()
-                .each(systems::check_if_dead_system);
-
-
-        world.system<const Health, rendering::ProgressBar>("update health bar on take damage")
-                .kind<PostCollisionDetected>()
-                .term_at(0).parent()
-                .each(systems::update_health_bar_system);
-
-        world.system<Health, RegenHealth>("regen health")
-                .kind(flecs::OnUpdate)
-                .each(systems::regen_health_system);
-
-        world.system<GiveExperience>()
-                .with<core::DestroyAfterFrame>()
-                .term_at(0).second<OnDeathEffect>()
-                .kind<PostCollisionDetected>()
-                .each(systems::give_experience_system);
+        // world.system<Damage>("collision detected, deal damage to target")
+        //         .with<physics::CollidedWith>(flecs::Wildcard)
+        //         .immediate()
+        //         .kind<OnCollisionDetected>()
+        //         .tick_source(physics::m_physicsTick)
+        //         .each(systems::deal_damage_on_collision_system);
+        //
+        // world.system<Damage>("collision detected, deal damage to target (non-frag)")
+        //         .with<physics::NonFragmentingCollidedWith>(flecs::Wildcard)
+        //         .immediate()
+        //         .kind<OnCollisionDetected>()
+        //         .tick_source(physics::m_physicsTick)
+        //         .each(systems::deal_damage_on_collision_system);
+        //
+        // world.system<const Health>("create health bar")
+        //         .with<TakeDamage>()
+        //         .without<HealthBar>()
+        //         .without<rendering::ProgressBar>()
+        //         .kind<PostCollisionDetected>()
+        //         .each(systems::create_health_bar_system);
+        //
+        // world.system<Health, TakeDamage>("take damage")
+        //         .kind<PostCollisionDetected>()
+        //         .each(systems::take_damage_system);
+        //
+        // world.system<const Health>("check if dead")
+        //         .kind<PostCollisionDetected>()
+        //         .immediate()
+        //         .each(systems::check_if_dead_system);
+        //
+        //
+        // world.system<const Health, rendering::ProgressBar>("update health bar on take damage")
+        //         .kind<PostCollisionDetected>()
+        //         .term_at(0).parent()
+        //         .each(systems::update_health_bar_system);
+        //
+        // world.system<Health, RegenHealth>("regen health")
+        //         .kind(flecs::OnUpdate)
+        //         .each(systems::regen_health_system);
+        //
+        // world.system<GiveExperience>()
+        //         .with<core::DestroyAfterFrame>()
+        //         .term_at(0).second<OnDeathEffect>()
+        //         .kind<PostCollisionDetected>()
+        //         .each(systems::give_experience_system);
 
         add_multiproj = world.system("add multi proj")
                 .kind(0)

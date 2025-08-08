@@ -18,6 +18,7 @@
 #include <raymath.h>
 
 #include "components.h"
+#include "perf_recorder.h"
 
 
 namespace physics {
@@ -49,21 +50,18 @@ namespace physics {
     public:
         // do not add implementation to the constructor
         PhysicsModule(flecs::world &world): BaseModule(world) {
-
         };
 
         ~PhysicsModule();
 
+        static PerfRecorder rec;
         static void set_collision_strategy(PHYSICS_COLLISION_STRATEGY strategy);
         static void reset_systems_list();
 
 
 
 
-
     private:
-
-
         void register_components(flecs::world &world);
 
         void register_queries(flecs::world &world);

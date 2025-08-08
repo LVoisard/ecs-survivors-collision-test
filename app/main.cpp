@@ -3,16 +3,16 @@
 #ifdef __linux__
 #include <perfcpp/event_counter.h>
 #endif
+#include <errno.h>
 #include <flecs.h>
 #include <fstream>
-#include <perfcpp/event_counter.h>
 #include <linux/perf_event.h>
-#include <sys/syscall.h>
-#include <unistd.h>
-#include <string.h>
+#include <perfcpp/event_counter.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 int main() {
 
 
@@ -21,7 +21,7 @@ int main() {
     const int screenHeight = 1080;
 #else
     const int screenWidth = 1920;
-    const int screenHeight = 1080;
+    const int screenHeight = 1440;
 #endif
 
 #ifdef __linux__
@@ -32,10 +32,12 @@ int main() {
             "collision-relationship", "collision-relationship-dontfragment", "collision-entity", "record-list",
             "spatial-hash",           "spatial-hash-relationship",
     };
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 30; i++) {
         for (int strategy = 0; strategy < 6; strategy++) {
 
-            if (strategy == 1) continue;
+            if (strategy == 1 || strategy == 5)
+                continue;
+
             Game game = Game(titles[strategy].c_str(), screenWidth, screenHeight);
             game.init();
             game.set_collision_strategy(static_cast<physics::PHYSICS_COLLISION_STRATEGY>(strategy));

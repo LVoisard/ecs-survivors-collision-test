@@ -9,7 +9,7 @@ def join_all_results_in_one(dir, name):
     files = []
     for file in os.listdir(dir):
         if ".txt" in file:
-            files.append(pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities", "FPS", "Frame Time (us)", "Cache References", "Cache Misses", "Cache miss rate (%)"]))
+            files.append(pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities",  "Frame Time (us)", "FPS", "Cache References", "Cache Misses", "Cache miss rate (%)"]))
     
     
     df = pd.concat(files, axis=0).groupby(["Frame"]).mean()
@@ -23,7 +23,7 @@ def save_to_csv_reduced(dir, name):
     files = []
     for file in os.listdir(dir):
         if ".txt" in file:
-            a = pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities", "FPS", "Frame Time (us)", "Cache References", "Cache Misses", "Cache miss rate (%)"])
+            a = pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities", "Frame Time (us)","FPS", "Cache References", "Cache Misses", "Cache miss rate (%)"])
             #print(a)
             #print(name)
             files.append(a)
@@ -40,7 +40,7 @@ dir_paths = [
     "./results/collision-entity/",
     "./results/collision-relationship/",
     "./results/spatial-hash/",
-    "./results/spatial-hash-relationship/",
+    #"./results/spatial-hash-relationship/",
 ]
 
 dir_names = {
@@ -48,7 +48,7 @@ dir_names = {
     "./results/collision-entity/": "collision-entity",
     "./results/collision-relationship/": "collision-relationship",
     "./results/spatial-hash/" : "spatial-hash",
-    "./results/spatial-hash-relationship/" : "spatial-hash-relationship",
+    #"./results/spatial-hash-relationship/" : "spatial-hash-relationship",
 }
 
 print (os.listdir("./results"))
@@ -62,15 +62,15 @@ for dir in dir_paths:
     df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "FPS"]]
     df2 = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Cache miss rate (%)"]]
     if ax_line is None:
-        ax_line = df.plot(figsize=(10, 5), xlim=(100),  ylabel="FPS", x = "Entities", y = "FPS", logx=True, label=dir_names[dir], stacked=False)
+        ax_line = df.plot(figsize=(10, 5), ylim=(30,300), xlim=(100, 8000),  ylabel="FPS", x = "Entities", y = "FPS", logx=True, label=dir_names[dir], stacked=False)
     else:
-        df.plot(ax=ax_line, x = "Entities", xlim=(100), y = "FPS", logx=True, label=dir_names[dir], stacked=False)
+        df.plot(ax=ax_line, x = "Entities",  ylim=(30,300), xlim=(100, 8000), y = "FPS", label=dir_names[dir], logx=True, stacked=False)
         
         
         
-fps_values = [30, 60, 100, 200]
-frame_time_values = [33333, 16667,10000, 5000]
-fps_labels = ["30 FPS", "60 FPS", "100 FPS", "200 FPS"]
+fps_values = [60, 100, 120, 240]
+frame_time_values = [1.0 / 60.0, 1.0 / 100.0 , 1.0 / 120.0, 1.0 / 240.0]
+fps_labels = ["60 FPS", "100 FPS", "120 FPS", "240 FPS"]
 
 fpsmeans = {fps: [] for fps in frame_time_values}
 

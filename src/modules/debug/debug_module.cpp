@@ -59,12 +59,12 @@ namespace debug {
         debug_FPS = world.system("Draw FPS")
                 .kind<rendering::RenderGUI>()
                 .run(systems::debug_fps_system);
-        debug_FPS.disable();
+        //debug_FPS.disable();
 
         debug_entity_count = world.system("Draw Entity Count")
                 .kind<rendering::RenderGUI>()
                 .run(systems::debug_entity_count_system);
-        debug_entity_count.disable();
+       // debug_entity_count.disable();
 
         debug_mouse_pos = world.system("Draw Mouse Position")
                 .kind<rendering::RenderGUI>()
@@ -102,7 +102,7 @@ namespace debug {
 
     void DebugModule::register_entities(flecs::world &world) {
         auto dropdown = world.entity("debug_dropdown").child_of<rendering::gui::prefabs::MenuBar>()
-                .set<rendering::gui::MenuBarTab>({"Debug Tools", 25});
+                .set<rendering::gui::MenuBarTab>({"Debug Tools", 25}).disable();
 
         world.entity("debug_collisions_item_0").child_of(dropdown)
                 .set<rendering::gui::MenuBarTabItem>({

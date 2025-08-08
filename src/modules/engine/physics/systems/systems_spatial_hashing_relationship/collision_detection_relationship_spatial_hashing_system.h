@@ -51,18 +51,18 @@ namespace physics::systems {
                         CollisionInfo a_info, b_info;
                         if (collision_handler[collider.type][other_collider.type](self, collider, a_info, other,
                                                                                   other_collider, b_info)) {
-                            collisions.push_back({self, other, a_info, b_info});
+                            list.records.push_back({self, other, a_info, b_info});
                         }
                     });
                 });
             }
         }
 
-        if (collisions.empty())
-            return;
-        list_mutex.lock();
-        list.records.insert(list.records.end(), collisions.begin(), collisions.end());
-        list_mutex.unlock();
+        // if (collisions.empty())
+        //     return;
+        // list_mutex.lock();
+        // list.records.insert(list.records.end(), collisions.begin(), collisions.end());
+        // list_mutex.unlock();
     }
 } // namespace physics::systems
 #endif // COLLISION_DETECTION_RELATIONSHIP_SPATIAL_HASHING_SYSTEM_H

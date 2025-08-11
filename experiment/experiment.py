@@ -9,7 +9,7 @@ def join_all_results_in_one(dir, name):
     files = []
     for file in os.listdir(dir):
         if ".txt" in file:
-            files.append(pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities",  "Frame Time (us)", "FPS", "Cache References", "Cache Misses", "Cache miss rate (%)"]))
+            files.append(pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities",  "Frame Time (s)", "FPS", "Cache References", "Cache Misses", "Cache miss rate (%)"]))
     
     
     df = pd.concat(files, axis=0).groupby(["Frame"]).mean()
@@ -23,7 +23,7 @@ def save_to_csv_reduced(dir, name):
     files = []
     for file in os.listdir(dir):
         if ".txt" in file:
-            a = pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities", "Frame Time (us)","FPS", "Cache References", "Cache Misses", "Cache miss rate (%)"])
+            a = pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities", "Frame Time (s)","FPS", "Cache References", "Cache Misses", "Cache miss rate (%)"])
             #print(a)
             #print(name)
             files.append(a)
@@ -54,17 +54,25 @@ dir_names = {
 print (os.listdir("./results"))
 
 ax_line = None
+ax_line2 = None
 for dir in dir_paths:
     
     print(dir)
     print(dir_names[dir])
     save_to_csv_reduced(dir, dir_names[dir])
     df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "FPS"]]
-    df2 = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Cache miss rate (%)"]]
+    df2 = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Frame Time (s)"]]
+
+    df2["Frame Time (s)"] = df2["Frame Time (s)"] * 1000
     if ax_line is None:
         ax_line = df.plot(figsize=(10, 5), ylim=(30,300), xlim=(100, 8000),  ylabel="FPS", x = "Entities", y = "FPS", logx=True, label=dir_names[dir], stacked=False)
     else:
         df.plot(ax=ax_line, x = "Entities",  ylim=(30,300), xlim=(100, 8000), y = "FPS", label=dir_names[dir], logx=True, stacked=False)
+    
+    if ax_line2 is None:
+        ax_line2 = df2.plot(figsize=(10, 5), xlim=(100, 8000),  ylabel="Frame Time (ms)", x = "Entities", y = "Frame Time (s)", logx=True, label=dir_names[dir], stacked=False)
+    else:
+        df2.plot(ax=ax_line2, x = "Entities",  xlim=(100, 8000), y = "Frame Time (s)", label=dir_names[dir], logx=True, stacked=False)
         
         
         
@@ -75,13 +83,15 @@ fps_labels = ["60 FPS", "100 FPS", "120 FPS", "240 FPS"]
 fpsmeans = {fps: [] for fps in frame_time_values}
 
 cachemeans = {dir: []}
+cache_references_sum = {dir: []}
 
 
 for dir in dir_paths:
-    df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Frame Time (us)", "Cache miss rate (%)"]].sort_values(by="Frame Time (us)")
+    df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Frame Time (s)", "Cache References", "Cache miss rate (%)"]].sort_values(by="Frame Time (s)")
     for i, fps in enumerate(frame_time_values):
-        fpsmeans[fps].append(np.interp(fps, df['Frame Time (us)'], df["Entities"]))
+        fpsmeans[fps].append(np.interp(fps, df['Frame Time (s)'], df["Entities"]))
     cachemeans[dir_names[dir]] = df["Cache miss rate (%)"].mean()
+    cache_references_sum[dir_names[dir]] = df["Cache References"].mean()
 
 
 
@@ -112,6 +122,19 @@ for i, (att, measurement) in enumerate(dir_names.items()):
 ax.set_title(f'Average Cache Miss')
 ax.set_ylabel('Miss %')
 ax.set_ylim(ymin=0, ymax=1)
+#ax.set_xticks(x, dir_names.values(), rotation=45, ha='right')
+ax.get_xaxis().set_visible(False)
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+ax.legend(loc='upper right')
+
+
+fig, ax = plt.subplots(figsize=(8, 6))
+mult = 0
+for i, (att, measurement) in enumerate(dir_names.items()):
+        rects = ax.bar(x[i], cache_references_sum[measurement], width, label=measurement)
+        ax.bar_label(rects, padding=3, fmt="%0.3f")
+ax.set_title(f'References')
+ax.set_ylabel('References')
 #ax.set_xticks(x, dir_names.values(), rotation=45, ha='right')
 ax.get_xaxis().set_visible(False)
 ax.grid(axis='y', linestyle='--', alpha=0.7)

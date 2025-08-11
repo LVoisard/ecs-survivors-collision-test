@@ -224,7 +224,9 @@ void Game::run() {
         filepath_stream << "../../results/" << m_windowName << "/";
         std::stringstream filename_stream;
         filename_stream << m_windowName << "-" << rep << ".txt";
-        recorder.dump_data(filepath_stream.str(), filename_stream.str());
+        //recorder.dump_data(filepath_stream.str(), filename_stream.str());
+
+
 #endif
 
 
@@ -253,7 +255,10 @@ void Game::run() {
         physics::PhysicsModule::set_collision_strategy(strategy);
     }
 
-    void Game::UpdateDrawFrameDesktop() { m_world.progress(GetFrameTime()); }
+    void Game::UpdateDrawFrameDesktop() {
+    m_world.progress(GetFrameTime());
+        physics::print_dt_test(m_world);
+}
 
     void Game::UpdateDrawFrameWeb(void *game) {
         Game *instance = static_cast<Game *>(game);

@@ -59,6 +59,13 @@ namespace physics {
                 enable_system(e, strategy == s);
             }
         }
+        for (int i = 0; i < collision_method_observers.size(); i++) {
+            for (auto e: collision_method_observers[i]) {
+                const auto s = static_cast<PHYSICS_COLLISION_STRATEGY>(i);
+                enable_system(e, strategy == s);
+            }
+        }
+        physics::strategy = strategy;
     }
 
 
@@ -69,8 +76,17 @@ namespace physics {
             }
             s.clear();
         }
+        for (auto s: collision_method_observers) {
+            for (auto e: s) {
+                e.destruct();
+            }
+            s.clear();
+        }
+
         collision_method_systems.clear();
-        collision_method_systems = std::vector<std::vector<flecs::entity>>(PHYSICS_COLLISION_STRATEGY::COUNT);
+        collision_method_observers.clear();
+        collision_method_systems = std::vector<std::vector<flecs::system>>(PHYSICS_COLLISION_STRATEGY::COUNT);
+        collision_method_observers = std::vector<std::vector<flecs::entity>>(PHYSICS_COLLISION_STRATEGY::COUNT);
     }
 
     void PhysicsModule::register_components(flecs::world &world) {
@@ -125,14 +141,14 @@ namespace physics {
                         .kind(flecs::OnUpdate)
                         .each(systems::update_grid_on_window_resized_system));
 
-        collision_method_systems[SPATIAL_HASH].push_back(
+        collision_method_observers[SPATIAL_HASH].push_back(
                 world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set")
                         .term_at(1)
                         .singleton()
                         .event(flecs::OnSet)
                         .each(systems::reset_grid));
 
-        collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
+        collision_method_observers[SPATIAL_HASH_RELATIONSHIP].push_back(
                 world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set relationship")
                         .term_at(1)
                         .singleton()
@@ -165,19 +181,19 @@ namespace physics {
 
         world.system<const Velocity2D, DesiredVelocity2D>("reset desired vel")
                 .kind(flecs::PreUpdate)
-                .multi_threaded()
+                
                 
                 .each(systems::reset_desired_velocity_system);
 
         world.system<Velocity2D, const DesiredVelocity2D, const AccelerationSpeed>("Lerp Current to Desired Velocity")
                 .kind<UpdateBodies>()
-                .multi_threaded()
+                
                 
                 .each(systems::update_velocity_system);
 
         world.system<core::Position2D, const Velocity2D>("Update Position")
                 .kind<UpdateBodies>()
-                .multi_threaded()
+                
                 
                 .each(systems::update_position_system);
 
@@ -208,7 +224,7 @@ namespace physics {
                 world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship)")
                         .with<rendering::Visible>()
                         .kind<Detection>()
-                        .multi_threaded()
+                        
                         
                         .each(systems::collision_detection_non_static_relationship_system));
 
@@ -217,7 +233,7 @@ namespace physics {
                 world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship non-frag)")
                         .with<rendering::Visible>()
                         .kind<Detection>()
-                        .multi_threaded()
+                        
                         
                         .each(systems::collision_detection_non_static_relationship_non_fragmenting_system));
 
@@ -236,7 +252,7 @@ namespace physics {
                                                      .term_at(0)
                                                      .singleton()
                                                      .kind<Detection>()
-                                                     .multi_threaded()
+                                                     
                                                      
                                                      .each(systems::collision_detection_non_static_record_list_system);
         m_collision_detection_naive_system.disable();
@@ -250,7 +266,7 @@ namespace physics {
                         .term_at(1)
                         .singleton()
                         .kind<Detection>()
-                        .multi_threaded()
+                        
                         
                         .each(systems::collision_detection_spatial_hashing_system);
         // m_collision_detection_spatial_hashing_system.disable();
@@ -263,7 +279,7 @@ namespace physics {
                         .term_at(1)
                         .singleton()
                         .kind<Detection>()
-                        .multi_threaded()
+                        
                         
                         .each(systems::collision_detection_relationship_spatial_hashing_system);
         m_collision_detection_spatial_ecs.disable();

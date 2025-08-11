@@ -21,7 +21,6 @@ namespace debug::systems {
             std::string(std::to_string(q.count()) + " visible entities").
             c_str(),
             10, 50, 20, GREEN);
-        q.destruct();
     }
 }
 #endif //DEBUG_ENTITY_COUNT_SYSTEM_H

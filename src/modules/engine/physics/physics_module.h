@@ -45,6 +45,23 @@ namespace physics {
     inline std::vector<std::vector<flecs::entity>> collision_method_observers;
     inline flecs::entity m_physicsTick;
 
+    inline std::chrono::system_clock::time_point start_update;
+    inline std::chrono::system_clock::time_point end_update;
+    inline std::chrono::system_clock::time_point start_detection;
+    inline std::chrono::system_clock::time_point end_detection;
+    inline std::chrono::system_clock::time_point start_resolution;
+    inline std::chrono::system_clock::time_point end_resolution;
+    inline std::chrono::system_clock::time_point start_event;
+    inline std::chrono::system_clock::time_point end_event;
+    inline std::chrono::system_clock::time_point start_cleanup;
+    inline std::chrono::system_clock::time_point end_cleanup;
+
+    inline double get_update_time() { return std::chrono::duration<double>(end_update - start_update).count(); }
+    inline double get_detection_time() { return std::chrono::duration<double>(end_detection - start_detection).count(); }
+    inline double get_resolution_time() { return std::chrono::duration<double>(end_resolution - start_resolution).count(); }
+    inline double get_event_time() { return std::chrono::duration<double>(end_event - start_event).count(); }
+    inline double get_cleanup_time() { return std::chrono::duration<double>(end_cleanup - start_cleanup).count(); }
+
     inline PHYSICS_COLLISION_STRATEGY strategy;
 
     inline void print_dt_test(flecs::world world) {
@@ -52,22 +69,19 @@ namespace physics {
         for (auto s: collision_method_systems[strategy]) {
             ecs_system_stats_t stats;
             if (ecs_system_stats_get(world, s, &stats)) {
-                //std::cout << s.name() << " avg: " << stats.time_spent.gauge.avg[stats.query.t] << std::endl;
-                //total += stats.time_spent.counter.value[stats.query.t];
-                const ecs_system_t* sys = ecs_system_get(world, s);
+                // std::cout << s.name() << " avg: " << stats.time_spent.gauge.avg[stats.query.t] << std::endl;
+                // total += stats.time_spent.counter.value[stats.query.t];
+                const ecs_system_t *sys = ecs_system_get(world, s);
                 if (sys) {
                     total += sys->time_spent;
 
-                    if (std::string(sys->name).find("Detec") != -1) {
-                        std::cout <<  sys->time_spent << std::endl;
-                    }
 
                 } else {
                     std::cout << s.name() << std::endl;
                 }
             }
         }
-        //std::cout << "Total collision system time: " << total << std::endl;
+        std::cout << "Total collision system time: " << total << std::endl;
     }
 
     class PhysicsModule : public BaseModule<PhysicsModule> {

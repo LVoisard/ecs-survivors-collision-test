@@ -123,6 +123,11 @@ namespace physics {
                         .each(systems::init_spatial_hashing_grid_relationship_system));
 #pragma endregion
 #pragma region "Update"
+
+        world.system("start update").kind(flecs::OnUpdate)
+        .run([](flecs::iter& it) {
+            start_update = std::chrono::high_resolution_clock::now();
+        });
         collision_method_systems[SPATIAL_HASH].push_back(
                 world.system<SpatialHashingGrid, core::GameSettings>("update grid on window resized")
                         .term_at(0)
@@ -213,13 +218,20 @@ namespace physics {
                         .without<StaticCollider>()
                         .kind<UpdateBodies>()
                         .each(systems::update_cell_entities_relationship_system));
+        world.system("end update").kind<UpdateBodies>()
+        .run([](flecs::iter& it) {
+            end_update = std::chrono::high_resolution_clock::now();
+        });
 #pragma endregion
 
 
 
 #pragma region "Collision Dectection"
 
-
+        world.system("start detection") .kind<Detection>()
+                .run([](flecs::iter& it) {
+                    start_detection = std::chrono::high_resolution_clock::now();
+                });
         collision_method_systems[COLLISION_RELATIONSHIP].push_back(
                 world.system<const core::Position2D, const Collider>("Detect Collisions ECS (Relationship)")
                         .with<rendering::Visible>()
@@ -284,9 +296,17 @@ namespace physics {
                         .each(systems::collision_detection_relationship_spatial_hashing_system);
         m_collision_detection_spatial_ecs.disable();
         collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(m_collision_detection_spatial_ecs);
+        world.system("end detection") .kind<Detection>()
+        .run([](flecs::iter& it) {
+            end_detection = std::chrono::high_resolution_clock::now();
+        });
 
 #pragma endregion
 #pragma region "Resolution"
+        world.system("start resolution").kind<Resolution>()
+                .run([](flecs::iter& it) {
+                    start_resolution = std::chrono::high_resolution_clock::now();
+                });
         collision_method_systems[COLLISION_RELATIONSHIP].push_back(
         world.system("Resolve Collisions ECS (Relationship)")
                 .with<CollidedWith>(flecs::Wildcard)
@@ -334,12 +354,19 @@ namespace physics {
                         
                         .each(systems::collision_resolution_rec_list_system));
 
-
+        world.system("end resolution").kind<Resolution>()
+                .run([](flecs::iter& it) {
+                    end_resolution = std::chrono::high_resolution_clock::now();
+                });
 
 
 #pragma endregion
 
 #pragma region "collision event"
+        world.system("start event").kind<Resolution>()
+                .run([](flecs::iter& it) {
+                    start_event = std::chrono::high_resolution_clock::now();
+                });
         collision_method_systems[RECORD_LIST].push_back(
                 world.system<CollisionRecordList>("Add CollidedWith Component 1")
                         .term_at(0)
@@ -361,9 +388,18 @@ namespace physics {
                         .kind<Resolution>()
                         
                         .each(systems::add_collided_with_system));
+
+        world.system("end event").kind<Resolution>()
+                .run([](flecs::iter& it) {
+                    end_event = std::chrono::high_resolution_clock::now();
+                });
 #pragma endregion
 
 #pragma region "Cleanup"
+        world.system("start cleanup").kind<CollisionCleanup>()
+               .run([](flecs::iter& it) {
+                   start_cleanup = std::chrono::high_resolution_clock::now();
+               });
         collision_method_systems[COLLISION_RELATIONSHIP].push_back(world.system("Collision Cleanup (relationship)")
                                                                            .with<Collider>()
                                                                            .kind<CollisionCleanup>()
@@ -407,6 +443,11 @@ namespace physics {
                         .kind<CollisionCleanup>()
                         
                         .each(systems::collision_cleanup_list_system));
+
+        world.system("end cleanup").kind<CollisionCleanup>()
+               .run([](flecs::iter& it) {
+                   end_cleanup = std::chrono::high_resolution_clock::now();
+               });
 #pragma endregion
     }
 

@@ -40,7 +40,7 @@ dir_paths = [
     "./results/collision-entity/",
     "./results/collision-relationship/",
     "./results/spatial-hash/",
-    #"./results/spatial-hash-relationship/",
+    #"./results/spatial-hash/",
 ]
 
 dir_names = {
@@ -48,7 +48,7 @@ dir_names = {
     "./results/collision-entity/": "collision-entity",
     "./results/collision-relationship/": "collision-relationship",
     "./results/spatial-hash/" : "spatial-hash",
-    #"./results/spatial-hash-relationship/" : "spatial-hash-relationship",
+    #"./results/spatial-hash/" : "spatial-hash",
 }
 
 print (os.listdir("./results"))

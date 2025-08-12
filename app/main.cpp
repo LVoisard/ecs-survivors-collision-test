@@ -21,7 +21,7 @@ int main() {
     const int screenHeight = 1080;
 #else
     const int screenWidth = 1920;
-    const int screenHeight = 1440;
+    const int screenHeight = 1080;
 #endif
 
 #ifdef __linux__
@@ -38,10 +38,9 @@ int main() {
             if (strategy == 1 || strategy == 5)
                 continue;
 
-            Game game = Game(titles[strategy].c_str(), screenWidth, screenHeight);
+            Game game = Game(titles[strategy].c_str(), screenWidth, screenHeight, i);
             game.init();
             game.set_collision_strategy(static_cast<physics::PHYSICS_COLLISION_STRATEGY>(strategy));
-            game.set_rep(i);
             game.run();
         }
     }

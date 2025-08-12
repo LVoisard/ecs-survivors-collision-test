@@ -47,8 +47,8 @@
 #include "modules/tilemap/components.h"
 #include "modules/tilemap/tilemap_module.h"
 
-Game::Game(const char *windowName, int windowWidth, int windowHeight) :
-    m_windowName(windowName), m_windowHeight(windowHeight), m_windowWidth(windowWidth) {}
+Game::Game(const char *windowName, int windowWidth, int windowHeight, int rep) :
+    m_windowName(windowName), m_windowHeight(windowHeight), m_windowWidth(windowWidth), rep(rep) {}
 
 
 void Game::init() {
@@ -56,19 +56,19 @@ void Game::init() {
     // Raylib window
     // #ifndef EMSCRIPTEN
     // web has an scaling issue with the cursor
-    //SetConfigFlags();
+    // SetConfigFlags();
     // #endif
-    SetTraceLogLevel(LOG_ERROR);
-    InitWindow(m_windowWidth, m_windowHeight, m_windowName.c_str());
+    //SetTraceLogLevel(LOG_ERROR);
+    InitWindow(m_windowWidth, m_windowHeight, (m_windowName+"-"+std::to_string(rep)).c_str());
 
     SetExitKey(KEY_F4);
     SetWindowFocused();
-    SetTargetFPS(240);
+    SetTargetFPS(300);
 #ifndef EMSCRIPTEN
     // use the flecs explorer when not on browser
     m_world.import <flecs::stats>();
     m_world.set<flecs::Rest>({});
-    //m_world.set_threads(static_cast<int>(std::thread::hardware_concurrency()));
+    // m_world.set_threads(static_cast<int>(std::thread::hardware_concurrency()));
 #endif
     physics::PhysicsModule::reset_systems_list();
     modules.push_back(m_world.import <core::CoreModule>());
@@ -109,7 +109,6 @@ void Game::init() {
                                                                 2.f,
                                                                 WHITE})
                                    .set<gameplay::Experience>({1, 0, 100000});
-
 
 
     auto hori = m_world.entity("player_horizontal_input").child_of(player).set<input::InputHorizontal>({});
@@ -153,7 +152,6 @@ void Game::init() {
     auto spawner = m_world.entity("enemy_spawner").set<gameplay::Spawner>({enemy, 1});
 
     m_world.set<rendering::TrackingCamera>({player, Camera2D{0}});
-
 }
 
 void Game::run() {
@@ -176,9 +174,9 @@ void Game::run() {
         int frames = 0;
         const int frame_capture_count = 60;
         float frame_times_history[frame_capture_count];
-        std::fill(std::begin(frame_times_history), std::end(frame_times_history), 240 / frame_capture_count);
+        std::fill(std::begin(frame_times_history), std::end(frame_times_history), (1.0 / 300.0) / 60.0);
 
-        float average_frame = 240;
+        float average_frame = 1.0 / 300.0;
 
         const auto counter_definition = perf::CounterDefinition{};
         auto recorder = PerfRecorder{counter_definition};
@@ -196,26 +194,28 @@ void Game::run() {
 #ifdef __linux__
 
 
-            recorder.stop_live_recording(m_world, (int)(1.f / average_frame));
+            recorder.stop_live_recording();
 
             int index = (frames + 1) % frame_capture_count;
             average_frame -= frame_times_history[index];
             frame_times_history[index] = recorder.get_dt() / frame_capture_count;
             average_frame += frame_times_history[index];
+            int fps = (1.f / average_frame);
 
+            recorder.save_frame(m_world, (int) (1.f / average_frame));
 
-            if ((int)(1.f / average_frame) < frame_capture_count) { // greater than 33 ms
-                if (frames > frame_capture_count) {
-                    //std::cout << "fps dropped below 60: " << frames << "," << 1.f / average_frame << std::endl;
+            if (fps  < frame_capture_count) { // greater than 33 ms
+                if (frames > 60) {
+                    // std::cout << "fps dropped below 60: " << frames << "," << 1.f / average_frame << std::endl;
                     break;
                 }
             }
 
-#endif
-            //std::cout << 1.f / average_frame << std::endl;
-            //std::cout << recorder.get_dt() << std::endl;
-            DrawText(std::to_string((int)(1.0f/average_frame)).c_str(), 10, 30, 30, LIME);
 
+#endif
+            // std::cout << 1.f / average_frame << std::endl;
+            // std::cout << recorder.get_dt() << std::endl;
+            DrawText(std::to_string((int) (1.0f / average_frame)).c_str(), 10, 30, 30, LIME);
         }
 #ifdef __linux__
         recorder.stop_recording();
@@ -224,7 +224,7 @@ void Game::run() {
         filepath_stream << "../../results/" << m_windowName << "/";
         std::stringstream filename_stream;
         filename_stream << m_windowName << "-" << rep << ".txt";
-        //recorder.dump_data(filepath_stream.str(), filename_stream.str());
+        recorder.dump_data(filepath_stream.str(), filename_stream.str());
 
 
 #endif
@@ -243,7 +243,7 @@ void Game::run() {
         }
         // recorder.close();
         modules.clear();
-        //std::cout << "inner reset: refcount = " << flecs_poly_refcount(m_world) << std::endl;
+        // std::cout << "inner reset: refcount = " << flecs_poly_refcount(m_world) << std::endl;
         m_world.reset();
         frames = 0;
     }
@@ -255,10 +255,7 @@ void Game::run() {
         physics::PhysicsModule::set_collision_strategy(strategy);
     }
 
-    void Game::UpdateDrawFrameDesktop() {
-    m_world.progress(GetFrameTime());
-        physics::print_dt_test(m_world);
-}
+    void Game::UpdateDrawFrameDesktop() { m_world.progress(GetFrameTime()); }
 
     void Game::UpdateDrawFrameWeb(void *game) {
         Game *instance = static_cast<Game *>(game);

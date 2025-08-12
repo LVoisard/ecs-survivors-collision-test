@@ -3,4 +3,3 @@ cmake*/
 out/
 .vs/
 CMakeSettings.json
-results/*/*

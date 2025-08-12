@@ -12,19 +12,18 @@
 #include "modules/engine/physics/components.h"
 
 #include <flecs/addons/stats.h>
+
+#include "modules/engine/physics/physics_module.h"
 static std::vector<std::string> event_names_non_live = {"cache-references", "cache-misses", "cache-miss-ratio"};
 static std::vector<std::string> event_names_live = {"cache-references", "cache-misses"};
-PerfRecorder::PerfRecorder(const perf::CounterDefinition& def) {
+PerfRecorder::PerfRecorder(const perf::CounterDefinition &def) {
     m_event_counter = std::make_unique<perf::EventCounter>(def);
     m_event_counter->add(event_names_non_live);
     m_event_counter->add_live(static_cast<std::vector<std::string>>(event_names_live));
 
     m_live_event_counter = std::make_unique<perf::LiveEventCounter>(*m_event_counter);
-
 }
-PerfRecorder::~PerfRecorder() {
-    m_counters.clear();
-}
+PerfRecorder::~PerfRecorder() { m_counters.clear(); }
 
 void PerfRecorder::init() {}
 void PerfRecorder::close() {
@@ -41,40 +40,41 @@ void PerfRecorder::start_live_recording() {
     m_live_start = std::chrono::high_resolution_clock::now();
     m_live_event_counter->start();
 }
-void PerfRecorder::stop_live_recording(flecs::world world, int fps) {
+void PerfRecorder::save_frame(flecs::world world, int fps) {
+    double update, detection, resolution, event, cleanup, total;
+    update = physics::get_update_time();
+    detection = physics::get_detection_time();
+    resolution = physics::get_resolution_time();
+    event = physics::get_event_time();
+    cleanup = physics::get_cleanup_time();
+    total = update + detection + resolution + event + cleanup;
+
+
+    double a = m_live_event_counter->get("cache-references");
+    double b = m_live_event_counter->get("cache-misses");
+    auto map = std::vector<std::string>{std::to_string(m_counters.size()),
+                                        std::to_string(world.query<core::Position2D, physics::Collider>().count()),
+                                        std::to_string(fps),
+                                        std::to_string(dt),
+                                        std::to_string(total),
+                                        std::to_string(a),
+                                        std::to_string(b),
+                                        std::to_string(b / a)};
+
+    m_counters.push_back(map);
+}
+void PerfRecorder::stop_live_recording() {
     m_live_event_counter->stop();
     auto now = std::chrono::high_resolution_clock::now();
 
-    dt = std::chrono::duration<float>(now - m_live_start).count();
-
-    ecs_world_stats_t stats;
-    ecs_world_stats_get(world, &stats);
-    stats.performance.system_time.gauge.avg[stats.t];
-    //auto c = stats.tables.count;
-
-    //ecs_world_stats_log(world, &stats);
-
-    //printf("Total archetype tables: %f\n", (stats.tables.count.gauge.max[stats.t]));
-    double a = m_live_event_counter->get("cache-references");
-    double b = m_live_event_counter->get("cache-misses");
-    auto map = std::vector<std::string>{
-            std::to_string(m_counters.size()),
-            std::to_string(world.query<core::Position2D, physics::Collider>().count()),
-            std::to_string(dt),
-            std::to_string(fps),
-            //std::to_string(c.counter.value[59]),
-            std::to_string(a),
-            std::to_string(b),
-            std::to_string(b / a)
-    };
-
-    m_counters.push_back(map);
+    dt = std::chrono::duration<double>(now - m_live_start).count();
 }
 void PerfRecorder::dump_data(std::string file_dir, std::string file_name) {
     std::cout << m_event_counter->result().to_string() << std::endl;
     try {
         if (std::ofstream file(file_dir + file_name); file.is_open()) {
-            file << "frame" << "," << "nb of entities" << "," << "FPS" << "," << "frame length" << "," << "cache-references" << ","
+            file << "frame" << "," << "nb of entities" << "," << "FPS" << "," << "frame length" << ","
+                 << "physics length" << "," << "cache-references" << ","
                  << "cache-misses" << "," << "cache-miss-ratio" << "\n";
             for (int i = 0; i < m_counters.size(); i++) {
                 for (int j = 0; j < m_counters[i].size(); j++) {

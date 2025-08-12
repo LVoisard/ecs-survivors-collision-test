@@ -29,7 +29,9 @@ public:
     void stop_recording();
 
     void start_live_recording();
-    void stop_live_recording(flecs::world, int);
+    void stop_live_recording();
+
+    void save_frame(flecs::world, int);
     [[nodiscard]] float get_dt() const {return dt;}
 
     void dump_data(std::string file_dir, std::string file_name);

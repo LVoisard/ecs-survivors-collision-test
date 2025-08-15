@@ -14,8 +14,8 @@
 #include <flecs/addons/stats.h>
 
 #include "modules/engine/physics/physics_module.h"
-static std::vector<std::string> event_names_non_live = {"cache-references", "cache-misses", "cache-miss-ratio"};
-static std::vector<std::string> event_names_live = {"cache-references", "cache-misses"};
+static std::vector<std::string> event_names_non_live = { "L1-dcache-loads", "L1-dcache-load-misses"};
+static std::vector<std::string> event_names_live = {"L1-dcache-loads", "L1-dcache-load-misses"};
 PerfRecorder::PerfRecorder(const perf::CounterDefinition &def) {
     m_event_counter = std::make_unique<perf::EventCounter>(def);
     m_event_counter->add(event_names_non_live);
@@ -50,8 +50,8 @@ void PerfRecorder::save_frame(flecs::world world, int fps) {
     total = update + detection + resolution + event + cleanup;
 
 
-    double a = m_live_event_counter->get("cache-references");
-    double b = m_live_event_counter->get("cache-misses");
+    double a = m_live_event_counter->get("L1-dcache-loads");
+    double b = m_live_event_counter->get("L1-dcache-load-misses");
     auto map = std::vector<std::string>{std::to_string(m_counters.size()),
                                         std::to_string(world.query<core::Position2D, physics::Collider>().count()),
                                         std::to_string(fps),
@@ -71,11 +71,13 @@ void PerfRecorder::stop_live_recording() {
 }
 void PerfRecorder::dump_data(std::string file_dir, std::string file_name) {
     std::cout << m_event_counter->result().to_string() << std::endl;
+    std::cout << m_event_counter->result().get("L1-dcache-load-misses").value() / m_event_counter->result().get("L1-dcache-loads").value() << std::endl;
+
     try {
         if (std::ofstream file(file_dir + file_name); file.is_open()) {
             file << "frame" << "," << "nb of entities" << "," << "FPS" << "," << "frame length" << ","
-                 << "physics length" << "," << "cache-references" << ","
-                 << "cache-misses" << "," << "cache-miss-ratio" << "\n";
+                 << "physics length" << "," << "L1-dcache-loads" << ","
+                 << "L1-dcache-load-misses" << "," << "L1-dcache-load-miss-ratio" << "\n";
             for (int i = 0; i < m_counters.size(); i++) {
                 for (int j = 0; j < m_counters[i].size(); j++) {
                     file << m_counters[i][j];

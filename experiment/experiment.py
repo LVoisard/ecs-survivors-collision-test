@@ -9,7 +9,7 @@ def join_all_results_in_one(dir, name):
     files = []
     for file in os.listdir(dir):
         if ".txt" in file:
-            files.append(pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities",  "Frame Time (s)", "FPS", "Cache References", "Cache Misses", "Cache miss rate (%)"]))
+            files.append(pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities", "FPS", "Frame Time (s)", "Physics Time (s)",  "Cache References", "Cache Misses", "Cache miss rate (%)"]))
     
     
     df = pd.concat(files, axis=0).groupby(["Frame"]).mean()
@@ -23,7 +23,7 @@ def save_to_csv_reduced(dir, name):
     files = []
     for file in os.listdir(dir):
         if ".txt" in file:
-            a = pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities", "Frame Time (s)","FPS", "Cache References", "Cache Misses", "Cache miss rate (%)"])
+            a = pd.read_csv(dir + file, header=0 ,names=["Frame", "Entities", "FPS", "Frame Time (s)", "Physics Time (s)", "Cache References", "Cache Misses", "Cache miss rate (%)"])
             #print(a)
             #print(name)
             files.append(a)
@@ -55,6 +55,7 @@ print (os.listdir("./results"))
 
 ax_line = None
 ax_line2 = None
+ax_line3 = None
 for dir in dir_paths:
     
     print(dir)
@@ -62,8 +63,10 @@ for dir in dir_paths:
     save_to_csv_reduced(dir, dir_names[dir])
     df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "FPS"]]
     df2 = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Frame Time (s)"]]
+    df3 = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Physics Time (s)"]]
 
     df2["Frame Time (s)"] = df2["Frame Time (s)"] * 1000
+    df3["Physics Time (s)"] = df3["Physics Time (s)"] * 1000
     if ax_line is None:
         ax_line = df.plot(figsize=(10, 5), ylim=(30,300), xlim=(100, 8000),  ylabel="FPS", x = "Entities", y = "FPS", logx=True, label=dir_names[dir], stacked=False)
     else:
@@ -73,6 +76,11 @@ for dir in dir_paths:
         ax_line2 = df2.plot(figsize=(10, 5), xlim=(100, 8000),  ylabel="Frame Time (ms)", x = "Entities", y = "Frame Time (s)", logx=True, label=dir_names[dir], stacked=False)
     else:
         df2.plot(ax=ax_line2, x = "Entities",  xlim=(100, 8000), y = "Frame Time (s)", label=dir_names[dir], logx=True, stacked=False)
+
+    if ax_line3 is None:
+        ax_line3 = df3.plot(figsize=(10, 5), xlim=(100, 8000),  ylabel="Physics Time (ms)", x = "Entities", y = "Physics Time (s)", logx=True, label=dir_names[dir], stacked=False)
+    else:
+        df3.plot(ax=ax_line3, x = "Entities",  xlim=(100, 8000), y = "Physics Time (s)", label=dir_names[dir], logx=True, stacked=False)
         
         
         
@@ -86,13 +94,18 @@ cachemeans = {dir: []}
 cache_references_sum = {dir: []}
 
 
+frame_time_at_budget_50 = {dir: []}
+frame_time_at_budget_25 = {dir: []}
+
+
 for dir in dir_paths:
-    df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Frame Time (s)", "Cache References", "Cache miss rate (%)"]].sort_values(by="Frame Time (s)")
-    for i, fps in enumerate(frame_time_values):
-        fpsmeans[fps].append(np.interp(fps, df['Frame Time (s)'], df["Entities"]))
+    df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Frame Time (s)", "Physics Time (s)", "Cache References", "Cache miss rate (%)"]].sort_values(by="Frame Time (s)")
+    for i, frame_time in enumerate(frame_time_values):
+        fpsmeans[frame_time].append(np.interp(frame_time, df['Frame Time (s)'], df["Entities"]))
     cachemeans[dir_names[dir]] = df["Cache miss rate (%)"].mean()
     cache_references_sum[dir_names[dir]] = df["Cache References"].mean()
-
+    frame_time_at_budget_50[dir_names[dir]] = np.interp(16.67/2000, df['Physics Time (s)'], df["Entities"]) # at 50% of 60 fps
+    frame_time_at_budget_25[dir_names[dir]] = np.interp(16.67/4000, df['Physics Time (s)'], df["Entities"]) # at 25% of 60 fps
 
 
 width = 1
@@ -125,7 +138,7 @@ ax.set_ylim(ymin=0, ymax=1)
 #ax.set_xticks(x, dir_names.values(), rotation=45, ha='right')
 ax.get_xaxis().set_visible(False)
 ax.grid(axis='y', linestyle='--', alpha=0.7)
-ax.legend(loc='upper right')
+ax.legend(loc='upper left')
 
 
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -138,7 +151,32 @@ ax.set_ylabel('References')
 #ax.set_xticks(x, dir_names.values(), rotation=45, ha='right')
 ax.get_xaxis().set_visible(False)
 ax.grid(axis='y', linestyle='--', alpha=0.7)
-ax.legend(loc='upper right')
+ax.legend(loc='upper left')
+
+
+fig, ax = plt.subplots(figsize=(8, 6))
+mult = 0
+for i, (att, measurement) in enumerate(dir_names.items()):
+        rects = ax.bar(x[i], frame_time_at_budget_50[measurement], width, label=measurement)
+        ax.bar_label(rects, padding=3, fmt="%0.3f")
+ax.set_title('Nb of Entities at 8ms physics time')
+ax.set_ylabel('Entities')
+#ax.set_xticks(x, dir_names.values(), rotation=45, ha='right')
+ax.get_xaxis().set_visible(False)
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+ax.legend(loc='upper left')
+
+fig, ax = plt.subplots(figsize=(8, 6))
+mult = 0
+for i, (att, measurement) in enumerate(dir_names.items()):
+        rects = ax.bar(x[i], frame_time_at_budget_25[measurement], width, label=measurement)
+        ax.bar_label(rects, padding=3, fmt="%0.3f")
+ax.set_title('Nb of Entities at 4ms physics time')
+ax.set_ylabel('Entities')
+#ax.set_xticks(x, dir_names.values(), rotation=45, ha='right')
+ax.get_xaxis().set_visible(False)
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+ax.legend(loc='upper left')
 
 plt.tight_layout()
 plt.show()

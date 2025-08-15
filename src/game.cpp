@@ -58,7 +58,7 @@ void Game::init() {
     // web has an scaling issue with the cursor
     // SetConfigFlags();
     // #endif
-    //SetTraceLogLevel(LOG_ERROR);
+    SetTraceLogLevel(LOG_ERROR);
     InitWindow(m_windowWidth, m_windowHeight, (m_windowName+"-"+std::to_string(rep)).c_str());
 
     SetExitKey(KEY_F4);

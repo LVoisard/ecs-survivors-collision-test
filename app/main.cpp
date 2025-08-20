@@ -28,14 +28,14 @@ int main() {
 
 #endif
 
-    std::string titles[6] = {
+    std::string titles[7] = {
             "collision-relationship", "collision-relationship-dontfragment", "collision-entity", "record-list",
-            "spatial-hash",           "spatial-hash-relationship",
+            "spatial-hash-per-cell", "spatial-hash-per-entity" ,         "spatial-hash-relationship",
     };
     for (int i = 0; i < 30; i++) {
-        for (int strategy = 0; strategy < 6; strategy++) {
+        for (int strategy = 0; strategy < 7; strategy++) {
 
-            if (strategy == 1 || strategy == 5)
+            if (strategy == 1 || strategy == 6)
                 continue;
 
             Game game = Game(titles[strategy].c_str(), screenWidth, screenHeight, i);

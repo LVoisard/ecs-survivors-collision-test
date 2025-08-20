@@ -84,7 +84,7 @@ void Game::init() {
 
     m_world.set<core::GameSettings>({m_windowName, m_windowWidth, m_windowHeight, m_windowWidth, m_windowHeight});
     m_world.add<physics::CollisionRecordList>();
-    m_world.set<physics::SpatialHashingGrid>({32, {0, 0}});
+    m_world.set<physics::SpatialHashingGrid>({64, {0, 0}});
     m_world.set<core::Paused>({false});
     m_world.set<core::EnabledMenus>({0});
     flecs::entity player = m_world.entity("player")

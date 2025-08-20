@@ -271,7 +271,7 @@ namespace physics {
         collision_method_systems[RECORD_LIST].push_back(m_collision_detection_naive_system);
 
         m_collision_detection_spatial_hashing_system =
-                world.system<CollisionRecordList, SpatialHashingGrid, GridCell>(
+                world.system<CollisionRecordList, SpatialHashingGrid>(
                              "Detect Collisions ECS non-static with spatial hashing")
                         .term_at(0)
                         .singleton()

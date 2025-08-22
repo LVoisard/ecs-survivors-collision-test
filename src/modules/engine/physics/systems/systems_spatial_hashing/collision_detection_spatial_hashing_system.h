@@ -99,17 +99,5 @@ namespace physics::systems {
         list.records.insert(list.records.end(), collisions.begin(), collisions.end());
         list_mutex.unlock();
     }
-
-    inline void collision_detection_spatial_hashing_system(flecs::iter &it, size_t, CollisionRecordList &list,
-                                                           SpatialHashingGrid &grid) {
-        if (it.world().query<Collider>().count() > grid.cells.size()) {
-            it.world().each<GridCell>(
-                    [&](GridCell &cell) { collision_detection_spatial_hashing_per_cell_system(list, grid, cell); });
-        } else {
-            it.world().query<const core::Position2D, const Collider>().each([&](flecs::entity e, const core::Position2D& p, const Collider& col) {
-                collision_detection_spatial_hashing_per_entity_system(e, list, grid, p, col);
-            });
-        }
-    }
 } // namespace physics::systems
 #endif // COLLISION_DETECTION_SPATIAL_HASHING_SYSTEM_H

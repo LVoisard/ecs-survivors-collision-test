@@ -36,7 +36,8 @@
 #include "systems/systems_dont_fragment_relationship/collision_resolution_system.h"
 #include "systems/systems_relationship/collision_resolution_system.h"
 
-#include "systems/systems_spatial_hashing/collision_detection_spatial_hashing_system.h"
+#include "systems/systems_spatial_hashing/collision_detection_spatial_hashing_per_cell_system.h"
+#include "systems/systems_spatial_hashing/collision_detection_spatial_hashing_per_entity_system.h"
 #include "systems/systems_spatial_hashing/init_spatial_hashing_grid_system.h"
 #include "systems/systems_spatial_hashing/update_cell_entities_system.h"
 #include "systems/systems_spatial_hashing/update_grid_on_window_resized_system.h"

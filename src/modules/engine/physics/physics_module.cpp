@@ -15,7 +15,6 @@
 
 #include "modules/engine/rendering/components.h"
 #include "systems/add_collided_with_system.h"
-#include "systems/collision_resolution_system.h"
 #include "systems/reset_desired_velocity_system.h"
 #include "systems/update_position_system.h"
 #include "systems/update_velocity_system.h"

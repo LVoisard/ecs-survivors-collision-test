@@ -14,8 +14,6 @@
 namespace physics::systems {
     inline void collision_detection_non_static_record_list_system(flecs::iter &it, size_t id,
                                                                   CollisionRecordList &list) {
-        std::vector<CollisionRecord> collisions;
-        std::vector<CollisionRecord> events;
         flecs::world stage_world = it.world();
 
         // Build a staged query, and filter
@@ -40,16 +38,11 @@ namespace physics::systems {
                         CollisionInfo b_info;
                         if (collision_handler[collider.type][other_collider.type](self, collider, a_info, other,
                                                                                   other_collider, b_info)) {
-                            collisions.push_back({self, other, a_info, b_info});
+                            list.records.push_back({self, other, a_info, b_info});
                         }
                     });
                 });
 
-
-        //not ideal, there is a bit of loss of time because of the lock
-        list_mutex.lock();
-        list.records.insert(list.records.end(), collisions.begin(), collisions.end());
-        list_mutex.unlock();
     }
 } // namespace physics::systems
 #endif // COLLISION_DETECTION_RECORD_LIST_SYSTEM_H

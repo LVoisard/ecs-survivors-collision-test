@@ -24,7 +24,6 @@ namespace physics::systems {
             return;
         }
         flecs::entity cell = grid.cells[std::make_pair(cell_pos_x, cell_pos_y)];
-        std::vector<CollisionRecord> collisions;
         for (int offset_y = -1; offset_y <= 1; offset_y++) {
             for (int offset_x = -1; offset_x <= 1; offset_x++) {
                 int x = cell.get<GridCell>().x + offset_x;

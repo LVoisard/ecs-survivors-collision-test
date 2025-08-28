@@ -34,6 +34,7 @@
 #include "systems/systems_create_entity/collision_detection_create_entity_system.h"
 #include "systems/systems_create_entity/collision_resolution_system.h"
 #include "systems/systems_dont_fragment_relationship/collision_resolution_system.h"
+#include "systems/systems_record_list/collision_resolution_system.h"
 #include "systems/systems_relationship/collision_resolution_system.h"
 
 #include "systems/systems_spatial_hashing/collision_detection_spatial_hashing_per_cell_system.h"

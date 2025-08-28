@@ -30,8 +30,6 @@ namespace physics::systems {
             // But player vs environment should count (because of projectiles, they might have behaviours specific to
             // obstacles)
 
-            collide_circles
-
             if ((a_col->collision_type & b_col->collision_type) == none &&
                 (a_col->collision_type | b_col->collision_type) != (enemy | environment)) {
                 rec.significant_collisions.push_back({a, b, record.info_a, b_info});

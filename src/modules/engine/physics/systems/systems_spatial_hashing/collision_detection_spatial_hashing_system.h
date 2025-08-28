@@ -43,7 +43,8 @@ namespace physics::systems {
                         if ((collider.collision_filter & other_collider.collision_type) == none)
                             continue;
 
-                        CollisionInfo a_info, b_info;
+                        CollisionInfo a_info;
+                        CollisionInfo b_info;
                         if (collision_handler[collider.type][other_collider.type](e, collider, a_info, other,
                                                                                   other_collider, b_info)) {
                             list.records.push_back({e, other, a_info, b_info});

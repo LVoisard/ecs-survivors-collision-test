@@ -46,22 +46,16 @@ namespace physics::systems {
                         CollisionInfo a_info, b_info;
                         if (collision_handler[collider.type][other_collider.type](e, collider, a_info, other,
                                                                                   other_collider, b_info)) {
-                            collisions.push_back({e, other, a_info, b_info});
+                            list.records.push_back({e, other, a_info, b_info});
                         }
                     }
 
             }
         }
-        if (collisions.empty())
-            return;
-        list_mutex.lock();
-        list.records.insert(list.records.end(), collisions.begin(), collisions.end());
-        list_mutex.unlock();
     }
 
     inline void collision_detection_spatial_hashing_per_cell_system(CollisionRecordList &list, SpatialHashingGrid &grid,
                                                                     GridCell &cell) {
-        std::vector<CollisionRecord> collisions;
         for (int offset_y = -1; offset_y <= 1; offset_y++) {
             for (int offset_x = -1; offset_x <= 1; offset_x++) {
                 int x = cell.x + offset_x;
@@ -73,7 +67,6 @@ namespace physics::systems {
 
                 for (int i = 0; i < cell.entities.size(); i++) {
                     flecs::entity self = cell.entities[i];
-                    // if (!self.is_alive()) continue;
                     const Collider collider = cell.entities[i].get<Collider>();
                     for (int j = 0; j < neighbour.entities.size(); j++) {
                         flecs::entity other = neighbour.entities[j];
@@ -84,20 +77,16 @@ namespace physics::systems {
                         if ((collider.collision_filter & other_collider.collision_type) == none)
                             continue;
 
-                        CollisionInfo a_info, b_info;
+                        CollisionInfo a_info;
+                        CollisionInfo b_info;
                         if (collision_handler[collider.type][other_collider.type](self, collider, a_info, other,
                                                                                   other_collider, b_info)) {
-                            collisions.push_back({self, other, a_info, b_info});
+                            list.records.push_back({self, other, a_info, b_info});
                         }
                     }
                 }
             }
         }
-        if (collisions.empty())
-            return;
-        list_mutex.lock();
-        list.records.insert(list.records.end(), collisions.begin(), collisions.end());
-        list_mutex.unlock();
     }
 } // namespace physics::systems
 #endif // COLLISION_DETECTION_SPATIAL_HASHING_SYSTEM_H

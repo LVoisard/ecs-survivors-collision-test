@@ -94,6 +94,7 @@ cachemeans = {dir: []}
 cache_references_sum = {dir: []}
 
 
+frame_time_at_budget_16ms = {dir: []}
 frame_time_at_budget_8ms = {dir: []}
 frame_time_at_budget_4ms = {dir: []}
 frame_time_at_budget_2ms = {dir: []}
@@ -106,6 +107,7 @@ for dir in dir_paths:
         fpsmeans[frame_time].append(np.interp(frame_time, df['Frame Time (s)'], df["Entities"]))
     cachemeans[dir_names[dir]] = df["Cache miss rate (%)"].mean()
     cache_references_sum[dir_names[dir]] = df["Cache References"].mean()
+    frame_time_at_budget_16ms[dir_names[dir]] = np.interp(1/60, df['Physics Time (s)'], df["Entities"]) # at 100% of 60 fps
     frame_time_at_budget_8ms[dir_names[dir]] = np.interp(1/60/2, df['Physics Time (s)'], df["Entities"]) # at 50% of 60 fps
     frame_time_at_budget_4ms[dir_names[dir]] = np.interp(1/120/2, df['Physics Time (s)'], df["Entities"]) # at 25% of 60 fps
     frame_time_at_budget_2ms[dir_names[dir]] = np.interp(1/240/2, df['Physics Time (s)'], df["Entities"]) # at 25% of 60 fps
@@ -157,6 +159,18 @@ ax.get_xaxis().set_visible(False)
 ax.grid(axis='y', linestyle='--', alpha=0.7)
 ax.legend(loc='upper left')
 
+
+fig, ax = plt.subplots(figsize=(8, 6))
+mult = 0
+for i, (att, measurement) in enumerate(dir_names.items()):
+        rects = ax.bar(x[i], frame_time_at_budget_16ms[measurement], width, label=measurement)
+        ax.bar_label(rects, padding=3, fmt="%0.0f")
+ax.set_title('Nb of Entities at 16ms physics time')
+ax.set_ylabel('Entities')
+#ax.set_xticks(x, dir_names.values(), rotation=45, ha='right')
+ax.get_xaxis().set_visible(False)
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+ax.legend(loc='upper left')
 
 fig, ax = plt.subplots(figsize=(8, 6))
 mult = 0

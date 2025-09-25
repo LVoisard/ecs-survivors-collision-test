@@ -15,7 +15,6 @@
 
 #include "modules/engine/rendering/components.h"
 #include "systems/add_collided_with_system.h"
-#include "systems/collision_resolution_system.h"
 #include "systems/reset_desired_velocity_system.h"
 #include "systems/update_position_system.h"
 #include "systems/update_velocity_system.h"
@@ -34,9 +33,11 @@
 #include "systems/systems_create_entity/collision_detection_create_entity_system.h"
 #include "systems/systems_create_entity/collision_resolution_system.h"
 #include "systems/systems_dont_fragment_relationship/collision_resolution_system.h"
+#include "systems/systems_record_list/collision_resolution_system.h"
 #include "systems/systems_relationship/collision_resolution_system.h"
 
-#include "systems/systems_spatial_hashing/collision_detection_spatial_hashing_system.h"
+#include "systems/systems_spatial_hashing/collision_detection_spatial_hashing_per_cell_system.h"
+#include "systems/systems_spatial_hashing/collision_detection_spatial_hashing_per_entity_system.h"
 #include "systems/systems_spatial_hashing/init_spatial_hashing_grid_system.h"
 #include "systems/systems_spatial_hashing/update_cell_entities_system.h"
 #include "systems/systems_spatial_hashing/update_grid_on_window_resized_system.h"

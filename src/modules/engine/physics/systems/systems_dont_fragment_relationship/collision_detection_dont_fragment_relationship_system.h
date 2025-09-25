@@ -17,8 +17,6 @@ namespace physics::systems {
     inline void collision_detection_non_static_relationship_non_fragmenting_system(flecs::iter &self_it, size_t self_id,
                                                                                    const core::Position2D &pos,
                                                                                    const Collider &collider) {
-        std::vector<CollisionRecord> collisions;
-        std::vector<CollisionRecord> events;
         flecs::world stage_world = self_it.world();
 
         // Build a staged query, and filter

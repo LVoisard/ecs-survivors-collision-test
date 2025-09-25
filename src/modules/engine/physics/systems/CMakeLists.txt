@@ -1,7 +1,6 @@
 set(PHYSICS_SYSTEMS_HEADERS
         collision_cleanup_system.h
         collision_detection_system.h
-        collision_resolution_system.h
         reset_desired_velocity_system.h
         update_position_system.h
         update_velocity_system.h

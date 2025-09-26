@@ -39,6 +39,7 @@ dir_paths = [
     "./results/record-list/",
     "./results/collision-entity/",
     "./results/collision-relationship/",
+    "./results/collision-relationship-dontfragment/",
     "./results/spatial-hash-per-cell/",
     "./results/spatial-hash-per-entity/",
 ]
@@ -47,6 +48,7 @@ dir_names = {
     "./results/record-list/": "record-list",
     "./results/collision-entity/": "collision-entity",
     "./results/collision-relationship/": "collision-relationship",
+    "./results/collision-relationship-dontfragment/": "collision-relationship-dontfragment",
     "./results/spatial-hash-per-cell/" : "spatial-hash-per-cell",
     "./results/spatial-hash-per-entity/" : "spatial-hash-per-entity",
 }

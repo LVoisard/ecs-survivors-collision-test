@@ -31,7 +31,7 @@ namespace core {
     void CoreModule::register_components(flecs::world &world) {
         world.component<Position2D>();
         world.component<Speed>();
-        world.component<GameSettings>();
+        world.component<GameSettings>().add(flecs::Singleton);
         world.component<Tag>();
         world.component<DestroyAfterTime>();
         world.component<DestroyAfterFrame>();
@@ -44,7 +44,6 @@ namespace core {
     void CoreModule::register_systems(flecs::world &world) {
         world.system<EnabledMenus>()
             .kind(flecs::OnStart)
-            .term_at(0).singleton()
             .each(systems::reset_enabled_menus_system);
 
         world.observer<const Paused>()
@@ -52,14 +51,12 @@ namespace core {
                 .each(systems::set_time_scale_on_pause_system);
 
         world.observer<EnabledMenus>()
-                .term_at(0).singleton()
                 .with<PauseOnEnabled>().filter()
                 .event(flecs::OnAdd)
                 .with(flecs::Disabled)
                 .each(systems::set_paused_on_entity_disable_system);
 
         world.observer<EnabledMenus>()
-                .term_at(0).singleton()
                 .with<PauseOnEnabled>().filter()
                 .event(flecs::OnRemove)
                 .with(flecs::Disabled)

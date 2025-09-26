@@ -72,8 +72,6 @@ namespace debug {
         debug_mouse_pos.disable();
 
         debug_grid = world.system<rendering::TrackingCamera, physics::SpatialHashingGrid, physics::GridCell>("Draw Grid")
-                .term_at(0).singleton()
-                .term_at(1).singleton()
                 .kind<rendering::RenderGizmos>()
                 .each(systems::debug_grid_system);
         debug_grid.disable();

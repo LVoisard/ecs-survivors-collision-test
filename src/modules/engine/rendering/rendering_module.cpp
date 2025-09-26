@@ -28,6 +28,7 @@ rendering::RenderingModule::~RenderingModule() {
 }
 void rendering::RenderingModule::register_components(flecs::world world) {
     world.component<Priority>();
+    world.component<TrackingCamera>().add(flecs::Singleton);
 }
 
 void rendering::RenderingModule::register_queries(flecs::world world) {
@@ -42,20 +43,15 @@ void rendering::RenderingModule::register_systems(flecs::world world) {
             .run(systems::begin_drawing_system);
 
     world.system<TrackingCamera>("on start begin camera mode")
-            .term_at(0).singleton()
             .kind(flecs::OnStart)
             .each(systems::create_camera_system);
 
     world.system<TrackingCamera, core::GameSettings>("begin camera mode")
-            .term_at(0).singleton()
-            .term_at(1).singleton()
             .kind<PreRender>()
             .each(systems::update_and_begin_camera_mode_system);
 
     world.system<const core::Position2D, const Renderable, const core::GameSettings, const TrackingCamera>(
                 "Determine Visible Entities")
-            .term_at(2).singleton()
-            .term_at(3).singleton()
             .write<Visible>()
             .kind<PreRender>()
             .multi_threaded()

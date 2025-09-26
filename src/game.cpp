@@ -224,7 +224,7 @@ void Game::run() {
         filepath_stream << "../../results/" << m_windowName << "/";
         std::stringstream filename_stream;
         filename_stream << m_windowName << "-" << rep << ".txt";
-        //recorder.dump_data(filepath_stream.str(), filename_stream.str());
+        recorder.dump_data(filepath_stream.str(), filename_stream.str());
 
 
 #endif

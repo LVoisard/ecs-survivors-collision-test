@@ -5,8 +5,8 @@
 #ifndef RENDERING_COMPONENTS_H
 #define RENDERING_COMPONENTS_H
 
+#include <flecs.h>
 #include <raylib.h>
-#include <modules/engine/core/components.h>
 
 namespace rendering {
     struct Priority {int priority;};

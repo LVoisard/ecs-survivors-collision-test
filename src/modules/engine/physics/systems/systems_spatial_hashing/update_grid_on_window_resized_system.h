@@ -18,6 +18,7 @@ namespace physics::systems {
             cell.second.destruct();
         }
         hashing_grid.cells.clear();
+
         init_spatial_hashing_grid_system(it, i, hashing_grid, settings);
     }
 

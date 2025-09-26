@@ -96,6 +96,8 @@ namespace physics {
         world.component<CollidedWith>();
         world.component<NonFragmentingCollidedWith>().add(flecs::DontFragment);
         world.component<ContainedIn>().add(flecs::Exclusive);
+        world.component<CollisionRecordList>().add(flecs::Singleton);
+        world.component<SpatialHashingGrid>().add(flecs::Singleton);
     }
 
     void PhysicsModule::register_queries(flecs::world &world) {}
@@ -106,27 +108,15 @@ namespace physics {
 #pragma region "Initialization"
         collision_method_systems[SPATIAL_HASH_PER_CELL].push_back(
                 world.system<SpatialHashingGrid, core::GameSettings>("init grid normal")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind(flecs::OnStart)
                         .each(systems::init_spatial_hashing_grid_system));
         collision_method_systems[SPATIAL_HASH_PER_ENTITY].push_back(
                 world.system<SpatialHashingGrid, core::GameSettings>("init grid normal per entity")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind(flecs::OnStart)
                         .each(systems::init_spatial_hashing_grid_system));
 
         collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
                 world.system<SpatialHashingGrid, core::GameSettings>("init grid relationship")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind(flecs::OnStart)
                         .each(systems::init_spatial_hashing_grid_relationship_system));
 #pragma endregion
@@ -137,84 +127,48 @@ namespace physics {
         });
         collision_method_systems[SPATIAL_HASH_PER_CELL].push_back(
                 world.system<SpatialHashingGrid, core::GameSettings>("update grid on window resized")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind(flecs::OnUpdate)
                         .each(systems::update_grid_on_window_resized_system));
 
         collision_method_systems[SPATIAL_HASH_PER_ENTITY].push_back(
                 world.system<SpatialHashingGrid, core::GameSettings>("update grid on window resized per entity")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind(flecs::OnUpdate)
                         .each(systems::update_grid_on_window_resized_system));
 
         collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
                 world.system<SpatialHashingGrid, core::GameSettings>("update grid on window resized relationship")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind(flecs::OnUpdate)
                         .each(systems::update_grid_on_window_resized_system));
 
-        collision_method_observers[SPATIAL_HASH_PER_CELL].push_back(
-                world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set")
-                        .term_at(1)
-                        .singleton()
-                        .event(flecs::OnSet)
-                        .each(systems::reset_grid));
-
-        collision_method_observers[SPATIAL_HASH_PER_ENTITY].push_back(
-                world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set per entity")
-                        .term_at(1)
-                        .singleton()
-                        .event(flecs::OnSet)
-                        .each(systems::reset_grid));
-
-        collision_method_observers[SPATIAL_HASH_RELATIONSHIP].push_back(
-                world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set relationship")
-                        .term_at(1)
-                        .singleton()
-                        .event(flecs::OnSet)
-                        .each(systems::reset_grid));
+        // collision_method_observers[SPATIAL_HASH_PER_CELL].push_back(
+        //         world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set")
+        //                 .event(flecs::OnSet)
+        //                 .each(systems::reset_grid));
+        //
+        // collision_method_observers[SPATIAL_HASH_PER_ENTITY].push_back(
+        //         world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set per entity")
+        //                 .event(flecs::OnSet)
+        //                 .each(systems::reset_grid));
+        //
+        // collision_method_observers[SPATIAL_HASH_RELATIONSHIP].push_back(
+        //         world.observer<SpatialHashingGrid, core::GameSettings>("update grid on grid set relationship")
+        //                 .event(flecs::OnSet)
+        //                 .each(systems::reset_grid));
 
         collision_method_systems[SPATIAL_HASH_PER_CELL].push_back(
                 world.system<SpatialHashingGrid, rendering::TrackingCamera, core::GameSettings, GridCell>("update grid")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
-                        .term_at(2)
-                        .singleton()
                         .kind(flecs::PreUpdate)
                         .each(systems::update_grid_system));
 
         collision_method_systems[SPATIAL_HASH_PER_ENTITY].push_back(
                 world.system<SpatialHashingGrid, rendering::TrackingCamera, core::GameSettings, GridCell>(
                              "update grid per entity")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
-                        .term_at(2)
-                        .singleton()
                         .kind(flecs::PreUpdate)
                         .each(systems::update_grid_system));
 
         collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
                 world.system<SpatialHashingGrid, rendering::TrackingCamera, core::GameSettings, GridCell>(
                              "update grid relationship")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
-                        .term_at(2)
-                        .singleton()
                         .kind(flecs::PreUpdate)
                         .each(systems::update_grid_system));
 
@@ -240,24 +194,18 @@ namespace physics {
 
         collision_method_systems[SPATIAL_HASH_PER_CELL].push_back(
                 world.system<SpatialHashingGrid, Collider, core::Position2D>("update entity cells")
-                        .term_at(0)
-                        .singleton()
                         .without<StaticCollider>()
                         .kind<UpdateBodies>()
                         .each(systems::update_cell_entities_system));
 
         collision_method_systems[SPATIAL_HASH_PER_ENTITY].push_back(
                 world.system<SpatialHashingGrid, Collider, core::Position2D>("update entity cells per entity")
-                        .term_at(0)
-                        .singleton()
                         .without<StaticCollider>()
                         .kind<UpdateBodies>()
                         .each(systems::update_cell_entities_system));
 
         collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
                 world.system<SpatialHashingGrid, Collider, core::Position2D>("update entity cells relationship")
-                        .term_at(0)
-                        .singleton()
                         .without<StaticCollider>()
                         .kind<UpdateBodies>()
                         .each(systems::update_cell_entities_relationship_system));
@@ -301,8 +249,6 @@ namespace physics {
 
         collision_method_systems[RECORD_LIST].push_back(
                 world.system<CollisionRecordList>("Detect Collisions ECS (Naive Record List) non-static")
-                        .term_at(0)
-                        .singleton()
                         .kind<Detection>()
 
 
@@ -312,29 +258,17 @@ namespace physics {
         collision_method_systems[SPATIAL_HASH_PER_CELL].push_back(
                 world.system<CollisionRecordList, SpatialHashingGrid, GridCell>(
                              "Detect Collisions ECS non-static with spatial hashing")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind<Detection>()
                         .each(systems::collision_detection_spatial_hashing_per_cell_system));
 
         collision_method_systems[SPATIAL_HASH_PER_ENTITY].push_back(
                 world.system<CollisionRecordList, SpatialHashingGrid, const core::Position2D, const Collider>(
                              "Detect Collisions ECS non-static with spatial hashing per entity")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind<Detection>()
                         .each(systems::collision_detection_spatial_hashing_per_entity_system));
 
         m_collision_detection_spatial_ecs =
                 world.system<CollisionRecordList, SpatialHashingGrid, GridCell>("test collision with relationship")
-                        .term_at(0)
-                        .singleton()
-                        .term_at(1)
-                        .singleton()
                         .kind<Detection>()
 
 
@@ -375,32 +309,24 @@ namespace physics {
                         .each(systems::collision_resolution_entity_system));
         collision_method_systems[RECORD_LIST].push_back(
                 world.system<CollisionRecordList>("Collision Resolution ECS (Naive Record List) 1")
-                        .term_at(0)
-                        .singleton()
                         .kind<Resolution>()
 
                         .each(systems::collision_resolution_rec_list_system));
 
         collision_method_systems[SPATIAL_HASH_PER_CELL].push_back(
                 world.system<CollisionRecordList>("Collision Resolution ECS (spatial hash) ")
-                        .term_at(0)
-                        .singleton()
                         .kind<Resolution>()
 
                         .each(systems::collision_resolution_rec_list_system));
 
         collision_method_systems[SPATIAL_HASH_PER_ENTITY].push_back(
                 world.system<CollisionRecordList>("Collision Resolution ECS (spatial hash) entity")
-                        .term_at(0)
-                        .singleton()
                         .kind<Resolution>()
 
                         .each(systems::collision_resolution_rec_list_system));
 
         collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
                 world.system<CollisionRecordList>("Collision Resolution ECS (spatial hash relationship)")
-                        .term_at(0)
-                        .singleton()
                         .kind<Resolution>()
 
                         .each(systems::collision_resolution_rec_list_system));
@@ -418,30 +344,22 @@ namespace physics {
         });
         collision_method_systems[RECORD_LIST].push_back(
                 world.system<CollisionRecordList>("Add CollidedWith Component 1")
-                        .term_at(0)
-                        .singleton()
                         .kind<Resolution>()
 
                         .each(systems::add_collided_with_system));
         collision_method_systems[SPATIAL_HASH_PER_CELL].push_back(
                 world.system<CollisionRecordList>("Add CollidedWith Component 2")
-                        .term_at(0)
-                        .singleton()
                         .kind<Resolution>()
 
                         .each(systems::add_collided_with_system));
 
         collision_method_systems[SPATIAL_HASH_PER_ENTITY].push_back(
                 world.system<CollisionRecordList>("Add CollidedWith Component 2 per entity")
-                        .term_at(0)
-                        .singleton()
                         .kind<Resolution>()
 
                         .each(systems::add_collided_with_system));
         collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
                 world.system<CollisionRecordList>("Add CollidedWith Component 3")
-                        .term_at(0)
-                        .singleton()
                         .kind<Resolution>()
 
                         .each(systems::add_collided_with_system));
@@ -479,30 +397,22 @@ namespace physics {
                                                                      .run(systems::collision_cleanup_entity));
 
         collision_method_systems[RECORD_LIST].push_back(world.system<CollisionRecordList>("Collision Cleanup List 1")
-                                                                .term_at(0)
-                                                                .singleton()
                                                                 .kind<CollisionCleanup>()
 
                                                                 .each(systems::collision_cleanup_list_system));
 
         collision_method_systems[SPATIAL_HASH_PER_CELL].push_back(
                 world.system<CollisionRecordList>("Collision Cleanup List 2")
-                        .term_at(0)
-                        .singleton()
                         .kind<CollisionCleanup>()
                         .each(systems::collision_cleanup_list_system));
 
         collision_method_systems[SPATIAL_HASH_PER_ENTITY].push_back(
                 world.system<CollisionRecordList>("Collision Cleanup List 2 entity")
-                        .term_at(0)
-                        .singleton()
                         .kind<CollisionCleanup>()
                         .each(systems::collision_cleanup_list_system));
 
         collision_method_systems[SPATIAL_HASH_RELATIONSHIP].push_back(
                 world.system<CollisionRecordList>("Collision Cleanup List 3")
-                        .term_at(0)
-                        .singleton()
                         .kind<CollisionCleanup>()
                         .each(systems::collision_cleanup_list_system));
 

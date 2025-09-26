@@ -42,6 +42,7 @@ namespace rendering::gui {
         world.component<Outline>();
         world.component<Font>();
         world.component<prefabs::Panel>().add(flecs::Inheritable);
+        world.component<FontAtlas>().add(flecs::Singleton);
         world.set<FontAtlas>({
             std::unordered_map<int, Font>{
                 {FONT_SIZE_16, LoadFontEx("../resources/Spectral-SemiBold.ttf", FONT_SIZE_16, nullptr, 0)},
@@ -118,7 +119,6 @@ namespace rendering::gui {
 
         world.system<const Text, const Rectangle, const InteractableElement*, const FontAtlas>("Draw Text")
                 .kind<RenderGUI>()
-                .term_at(3).singleton()
                 .each(systems::draw_text_system);
 
         world.system<const Rectangle, const Outline>("Draw Outline")

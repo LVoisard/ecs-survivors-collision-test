@@ -47,8 +47,8 @@ if (NOT flecs_FOUND) # If there's none, fetch and build flecs
     include(FetchContent)
     FetchContent_Declare(
             flecs
-            DOWNLOAD_EXTRACT_TIMESTAMP OFF
-            URL https://github.com/SanderMertens/flecs/archive/refs/tags/v${FLECS_VERSION}.tar.gz
+            GIT_REPOSITORY https://github.com/SanderMertens/flecs
+            GIT_TAG master
     )
     FetchContent_GetProperties(flecs)
     if (NOT flecs_POPULATED) # Have we downloaded raylib yet?

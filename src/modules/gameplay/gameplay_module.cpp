@@ -63,8 +63,6 @@ namespace gameplay {
 
         spawn_system = world.system<const Spawner, const core::GameSettings, const rendering::TrackingCamera>("Spawn Enemies")
                 //.tick_source(m_spawner_tick)
-                .term_at(1).singleton()
-                .term_at(2).singleton()
                 .each(systems::spawn_enemies_around_screen_system);
 
         // world.system<Cooldown>("Update Cooldown")

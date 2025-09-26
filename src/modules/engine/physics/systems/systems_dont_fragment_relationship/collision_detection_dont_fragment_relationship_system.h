@@ -37,6 +37,7 @@ namespace physics::systems {
             CollisionInfo b_info;
             if (collision_handler[collider.type][other_collider.type](self, collider, a_info, other, other_collider,
                                                                        b_info)) {
+                correct_positions(self, collider, a_info, other, other_collider, b_info);
                 self.add<NonFragmentingCollidedWith>(other);
                 other.add<NonFragmentingCollidedWith>(self);
             }

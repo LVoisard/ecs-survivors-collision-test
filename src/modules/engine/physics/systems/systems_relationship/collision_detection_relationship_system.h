@@ -10,6 +10,7 @@
 #include <vector>
 #include "../../components.h"
 #include "modules/engine/core/components.h"
+#include "modules/engine/physics/collision_helper.h"
 #include "modules/engine/rendering/components.h"
 
 namespace physics::systems {

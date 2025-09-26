@@ -35,7 +35,7 @@ int main() {
     for (int i = 0; i < 30; i++) {
         for (int strategy = 0; strategy < 7; strategy++) {
 
-            if (strategy == 1 || strategy == 6)
+            if (strategy != 1)
                 continue;
 
             Game game = Game(titles[strategy].c_str(), screenWidth, screenHeight, i);

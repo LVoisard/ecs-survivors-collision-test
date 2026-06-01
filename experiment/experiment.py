@@ -13,7 +13,9 @@ def join_all_results_in_one(dir, name):
     
     
     df = pd.concat(files, axis=0).groupby(["Frame"]).mean()
-    return df
+    df_std = pd.concat(files, axis=0).groupby(["Frame"]).std()
+    print(df_std)
+    return df, df_std
     # concatinated_files[["Entities", "FPS"]].plot(x = "Entities", y = "FPS", logx=True)
     # print(concatinated_files.groupby(["FPS"])["Entities"].mean())
     # print(concatinated_files.head())
@@ -60,12 +62,16 @@ ax_line2 = None
 ax_line3 = None
 for dir in dir_paths:
     
-    print(dir)
-    print(dir_names[dir])
+    #print(dir)
+   #print(dir_names[dir])
     save_to_csv_reduced(dir, dir_names[dir])
-    df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "FPS"]]
-    df2 = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Frame Time (s)"]]
-    df3 = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Physics Time (s)"]]
+    df_mean, df_std = join_all_results_in_one(dir, dir_names[dir])
+    #print(df_mean.columns)
+    df = df_mean[["Entities", "FPS"]]
+    df2_mean, df2_std = join_all_results_in_one(dir, dir_names[dir])
+    df2 = df2_mean[["Entities", "Frame Time (s)"]]
+    df3_mean, df3_std = join_all_results_in_one(dir, dir_names[dir])
+    df3 = df3_mean[["Entities", "Physics Time (s)"]]
 
     df2["Frame Time (s)"] = df2["Frame Time (s)"] * 1000
     df3["Physics Time (s)"] = df3["Physics Time (s)"] * 1000
@@ -104,7 +110,8 @@ frame_time_at_budget_1ms = {dir: []}
 
 
 for dir in dir_paths:
-    df = join_all_results_in_one(dir, dir_names[dir])[["Entities", "Frame Time (s)", "Physics Time (s)", "Cache References", "Cache miss rate (%)"]].sort_values(by="Frame Time (s)")
+    df_mean, df_std = join_all_results_in_one(dir, dir_names[dir])
+    df = df_mean[["Entities", "Frame Time (s)", "Physics Time (s)", "Cache References", "Cache miss rate (%)"]].sort_values(by="Frame Time (s)")
     for i, frame_time in enumerate(frame_time_values):
         fpsmeans[frame_time].append(np.interp(frame_time, df['Frame Time (s)'], df["Entities"]))
     cachemeans[dir_names[dir]] = df["Cache miss rate (%)"].mean()
